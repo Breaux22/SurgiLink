@@ -12,12 +12,12 @@ channel = "stable-24_05"
 language = "nodejs"
 
 [deployment]
-run = ["node", "index.js"]
-deploymentTarget = "cloudrun"
+run = ["sh", "-c", "expo start --tunnel"]
+deploymentTarget = "gce"
 ignorePorts = false
 
 [workflows]
-runButton = "Expo Start"
+runButton = "Expo Start Tunnel"
 
 [[workflows.workflow]]
 name = "Expo Start Tunnel"
@@ -38,5 +38,14 @@ task = "shell.exec"
 args = "npx expo start"
 
 [[ports]]
+localPort = 4040
+externalPort = 8080
+exposeLocalhost = true
+
+[[ports]]
 localPort = 8081
 externalPort = 80
+
+[[ports]]
+localPort = 8082
+externalPort = 3000
