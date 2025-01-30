@@ -332,12 +332,12 @@ const CasePage = () => {
 
     async function addCase () {
         const caseData = {
-            dateString: surgdate,
-            surgDate: surgdate,
-            surgTime: surgdate,
+            dateString: new Date(surgdate - (1000*60*60*8)),
+            surgDate: new Date(surgdate - (1000*60*60*8)),
+            surgTime: new Date(surgdate - (1000*60*60*8)),
             timezone: timezone,
-            surgMonth: await getMonthString(surgdate.getMonth()),
-            surgYear: surgdate.getFullYear(),
+            surgMonth: await getMonthString(new Date(surgdate - (1000*60*60*8)).getMonth()),
+            surgYear: new Date(surgdate - (1000*60*60*8)).getFullYear(),
             procType: proctype,
             dr: surgeonText,
             hosp: facilityText,
@@ -373,10 +373,9 @@ const CasePage = () => {
         return monthIndex;
     }
 
-    const setDate = (event: DateTimePickerEvent, date: Date) => {
-        setSurgdate(date);
-        setSurgtime(date);
-    };
+    const setDate = (event, newDate) => {
+        setSurgdate(newDate);
+    }
 
     useEffect(() => {
         getSurgeons();

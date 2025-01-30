@@ -420,9 +420,9 @@ function CasePage () {
     async function updateCase () {
         const caseData = {
             caseId: caseId,
-            dateString: surgdate,
-            surgDate: surgdate,
-            surgTime: surgdate,
+            dateString: new Date(surgdate - (1000*60*60*8)),
+            surgDate: new Date(surgdate - (1000*60*60*8)),
+            surgTime: new Date(surgdate - (1000*60*60*8)),
             procType: proctype,
             dr: surgeonText,
             hosp: facilityText,
@@ -459,19 +459,13 @@ function CasePage () {
     }
     
     async function updateValues() {
-        const newDate = new Date(myCase.dateString);
-        setSurgdate(newDate);
-        setSurgtime(newDate);
+        setSurgdate(new Date(new Date(myCase.surgdate).getTime() + (1000*60*60*8)));
+        setSurgtime(new Date(new Date(myCase.surgdate).getTime() + (1000*60*60*8)));
         setProctype(myCase.proctype);
         setFacilityText(myCase.hosp);
         setSurgeonText(myCase.dr);
         setNotes(myCase.notes);
     }
-
-    const setDate = (event: DateTimePickerEvent, date: Date) => {
-        setSurgdate(date);
-        setSurgtime(date);
-    };
 
     async function openPreview (imageData) {
         setPreviewImage(imageData);
@@ -503,6 +497,10 @@ function CasePage () {
                 <Text allowFontScaling={false} style={{marginLeft: width * 0.02, }}>No Images.</Text>
             )
         }
+    }
+
+    const setDate = (event, newDate) => {
+        setSurgdate(newDate);
     }
 
     useEffect(() => {

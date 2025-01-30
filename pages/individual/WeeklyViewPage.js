@@ -263,11 +263,11 @@ const WeeklyViewPage = () => {
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
             <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, }}
+                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
                 onPress={() => {
                     navigation.reset({
                         index: 0,
-                        routes: [{name: 'New Case', params: {backTo: {name: 'Weekly View', params: {month: month, year: year}}}}]
+                        routes: [{name: 'Create New Case', params: {backTo: {name: 'Weekly View', params: {month: month, year: year}}}}]
                     })
                 }}
                 >

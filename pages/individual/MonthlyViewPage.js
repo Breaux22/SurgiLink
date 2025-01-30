@@ -20,6 +20,7 @@ const MonthlyViewPage = () => {
     const [monthlyCaseData, setMonthlyCaseData] = useState([]);
     const [currMonth, setCurrMonth] = useState(route.params?.month || new Date().getMonth());
     const [currYear, setCurrYear] = useState(route.params?.year || new Date().getFullYear());
+    const [selectedDate, setSelectedDate] = useState();
     const [calendarComp, setCalendarComp] = useState();
     const [casesComp, setCasesComp] = useState();
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
@@ -27,6 +28,7 @@ const MonthlyViewPage = () => {
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [casesStyle, setCasesStyle] = useState(styles.collapsed);
+    const [menuUp, setMenuUp] = useState(false);
     const navigation = useNavigation();  
     const { myMemory, setMyMemory } = useMemory();
 
@@ -107,8 +109,10 @@ const MonthlyViewPage = () => {
         if (currMonth == 0){
             setCurrMonth(prev => 11);
             setCurrYear(prev => currYear - 1);
+            setSelectedDate(1);
         } else {
             setCurrMonth(prev => currMonth - 1);
+            setSelectedDate(1);
         }
     }
 
@@ -116,8 +120,10 @@ const MonthlyViewPage = () => {
         if (currMonth == 11) {
             setCurrMonth(prev => 0);
             setCurrYear(prev => currYear + 1);
+            setSelectedDate(1);
         } else {
-             setCurrMonth(prev => currMonth + 1);   
+            setCurrMonth(prev => currMonth + 1);  
+            setSelectedDate(1); 
         }
     }
 
@@ -147,28 +153,68 @@ const MonthlyViewPage = () => {
     }
 
     function generateBlockList (myDate) {
-        const caseList = monthlyCaseData.filter((item) => new Date(item.surgdate).getDate() == myDate);
+        const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
         return (
             caseList.map((item, index) => (
                 <View key={item.id} style={{borderRadius: 2, width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: "#a6f296"}}>
                     <Text allowFontScaling={false} style={{fontSize: width * 0.025}}>{item.hosp.slice(0,9)}</Text>
                 </View>
-            ))
+            )) 
         )
     }
+
+    function generateBlockListShort (myDate) {
+        const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
+        if (caseList.length > 0) {
+            return (
+                <View style={{borderRadius: 15, width: width * 0.03, height: width * 0.03, marginLeft: width * 0.06, backgroundColor: "#a6f296"}}/>
+            )
+        }
+    }
+
+    function formatTo12HourTime(dateString) {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          throw new Error("Invalid date string");
+        }
+        let hours = date.getHours();
+        const minutes = date.getMinutes();
+        const amPm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; 
+        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+        return `${hours}:${formattedMinutes} ${amPm}`;
+      }
 
     function fillCasesComp (myDate) {
-        const caseList = monthlyCaseData.filter((item) => new Date(item.surgdate).getDate() == myDate);
-        setCasesComp(prev =>
-            caseList.map((item, index) => (
-                <View key={item.id} style={{borderRadius: 5, width: width * 0.9, marginLeft: width * 0.05, marginBottom: width * 0.02, backgroundColor: "#dae9f7"}}>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.025}}>{item.hosp.slice(0,9)}</Text>
-                </View>
-            ))
-        )
+        const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate)
+        if (caseList.length > 0) {
+            setCasesComp(prev =>
+                caseList.map((item, index) => (
+                    <TouchableOpacity
+                        onPress={() => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [{name: 'Case Info', params: {caseProp: item, backTo: {name: 'Monthly View', params: {month: currMonth, year: currYear}}}}]
+                            })
+                        }}
+                        >
+                        <View key={item.id} style={{borderRadius: 5, width: width * 0.9, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: "#dae9f7"}}>
+                            <View style={[styles.row, { borderBottomWidth: width * 0.003, width: width * 0.88, marginLeft: width * 0.01, }]}>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, paddingLeft: width * 0.01, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
+                            </View>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, marginBottom: width * 0.02, }}>w/ {item.dr}</Text>
+                        </View>
+                    </TouchableOpacity>
+                ))
+            )
+        } else {
+            setCasesComp(prev => <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.03, color: "#fff", }}>No Cases.</Text>)
+        }
     }
 
-    function generateCalendarComp () {
+    function generateCalendarCompTall () {
         const prevLastDate = new Date(currYear, currMonth, 0).getDate();
         const firstDay = new Date(currYear, currMonth, 1).getDay();   
         const lastDate = new Date(currYear, currMonth + 1, 0).getDate();
@@ -189,24 +235,74 @@ const MonthlyViewPage = () => {
         setCalendarComp(prev => 
             <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: width * 0.003, }}>
                 {headArr.map((item, index) => (
-                    <View key={"A" + item} style={{width: width * 0.1428, height: width * 0.28, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"A" + item} style={{width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
                 {dateArr.map((item, index) => (
                     <TouchableOpacity 
-                        key={"B" + item} style={{width: width * 0.1428, height: width * 0.28, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, }}
+                        key={"B" + item} style={{width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, }}
                         onPress={() => {
-                            fillCasesComp(item);
-                            setCasesStyle(styles.showCases);
+                            setSelectedDate(item + 1)
+                            fillCasesComp(item + 1);
+                            setCasesStyle(styles.showCasesUp);
+                            setMenuUp(true);
+                            generateCalendarCompShort();
                         }}
                         >
                         <Text allowFontScaling={false}>{item + 1}</Text>
-                        {generateBlockList(item)}
+                        {generateBlockList(item + 1)}
                     </TouchableOpacity>
                 ))}
                 {tailArr.map((item, index) => (
-                    <View key={"C" + item} style={{width: width * 0.1428, height: width * 0.28, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"C" + item} style={{width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                        <Text allowFontScaling={false}>{item + 1}</Text>
+                    </View>
+                ))}
+            </View>
+        )
+    }
+
+    function generateCalendarCompShort () {
+        const prevLastDate = new Date(currYear, currMonth, 0).getDate();
+        const firstDay = new Date(currYear, currMonth, 1).getDay();   
+        const lastDate = new Date(currYear, currMonth + 1, 0).getDate();
+        const nextFirstDay = new Date(currYear, currMonth + 1, 1).getDay();
+
+        let headArr = [];
+        for(let i=prevLastDate-firstDay; i<prevLastDate;i++){
+            headArr= [...headArr, i];
+        }
+        let dateArr = [];
+        for(let i=0;i<lastDate;i++){
+            dateArr = [...dateArr, i];
+        }
+        let tailArr = [];
+        for(let i=0; i<(7-nextFirstDay);i++){
+            tailArr = [...tailArr, i];
+        }
+        setCalendarComp(prev => 
+            <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: width * 0.003, }}>
+                {headArr.map((item, index) => (
+                    <View key={"A" + item} style={{width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                        <Text allowFontScaling={false}>{item + 1}</Text>
+                    </View>
+                ))}
+                {dateArr.map((item, index) => (
+                    <TouchableOpacity 
+                        key={"B" + item} style={{width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, }}
+                        onPress={() => {
+                            setSelectedDate(item + 1)
+                            fillCasesComp(item + 1);
+                            //setCasesStyle(styles.showCasesUp);
+                        }}
+                        >
+                        <Text allowFontScaling={false}>{item + 1}</Text>
+                        {generateBlockListShort(item + 1)}
+                    </TouchableOpacity>
+                ))}
+                {tailArr.map((item, index) => (
+                    <View key={"C" + item} style={{width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
@@ -216,20 +312,25 @@ const MonthlyViewPage = () => {
 
     useEffect(() => {
         getCases(currYear, [currMonth]);
+        fillCasesComp(selectedDate);
     }, [currMonth])
 
     useEffect(() => {
-        generateCalendarComp ();
+        if (menuUp == false) {
+            generateCalendarCompTall();
+        } else {
+            generateCalendarCompShort();
+        }
     }, [monthlyCaseData])
         
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
             <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, }}
+                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
                 onPress={() => {
                     navigation.reset({
                         index: 0,
-                        routes: [{name: 'New Case', params: {backTo: {name: 'Monthly View', params: {month: currMonth, year: currYear}}}}]
+                        routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: currMonth, year: currYear}}}}]
                     })
                 }}
                 >
@@ -312,7 +413,7 @@ const MonthlyViewPage = () => {
             </View>
             <View style={{padding: width * 0.021, flexDirection: "row"}}>
                 <TouchableOpacity
-                    onPress={() => getCases(currYear, currMonth)}
+                    onPress={() => getCases(currYear, [currMonth])}
                     >
                     <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.09, height: width * 0.09}}/>
                 </TouchableOpacity>
@@ -341,28 +442,73 @@ const MonthlyViewPage = () => {
                     </TouchableOpacity>
                 </View>
             </View>
+            <View style={styles.row}>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.053}}>Su</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Mo</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Tu</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>We</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Th</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Fr</Text>
+                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Sa</Text>
+            </View>
             {calendarComp}
             <View style={casesStyle}>
-                <TouchableOpacity
-                    onPress={() => setCasesStyle(styles.collapsed)}
-                    >
-                    <Image source={require('../../assets/icons/close-white.png')} style={{width: width * 0.07, height: width * 0.07, marginLeft: width * 0.89, marginTop: width * 0.04, }}/>
-                </TouchableOpacity>
+                <View style={styles.row}>
+                    <Text allowFontScaling={false} 
+                        style={{color: "#fff", fontSize: width * 0.08, fontStyle: 'italic', marginTop: width * 0.02, marginLeft: width * 0.035, width: width * 0.82}}
+                        >
+                        {getMonthString(currMonth)}, {selectedDate} {currYear}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setCasesStyle(styles.collapsed)
+                            setMenuUp(false);
+                            generateCalendarCompTall();
+                        }}
+                        >
+                        <Image source={require('../../assets/icons/down-arrow-white.png')} 
+                            style={{width: width * 0.13, height: width * 0.13, marginTop: width * 0.02, }}
+                            />
+                    </TouchableOpacity>
+                </View>
+
                 <ScrollView style={{width: width, height: width * 0.9}}>
                     {casesComp}
+                    <View style={{height: width * 0.4}}/>
                 </ScrollView>
+            </View>
+            <View style={styles.showCasesDown}>
+                <TouchableOpacity
+                    onPress={() => {
+                        setCasesStyle(styles.showCasesUp)
+                        generateCalendarCompShort();
+                        setMenuUp(true);
+                    }}
+                >
+                    <Image source={require('../../assets/icons/up-arrow-white.png')} style={{width: width * 0.13, height: width * 0.13, marginLeft: width * 0.855, marginTop: width * 0.02, }}/>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
   };
 
 const styles = StyleSheet.create({
-    showCases: {
+    showCasesUp: {
         position: 'absolute', 
         width: width, 
         height: height * 0.5, 
         backgroundColor: "#333436", 
         marginTop: height * 0.5, 
+        borderTopLeftRadius: 30, 
+        borderTopRightRadius: 30, 
+        zIndex: 1,
+    },    
+    showCasesDown: {
+        position: 'absolute', 
+        width: width, 
+        height: height * 0.1, 
+        backgroundColor: "#333436", 
+        marginTop: height * 0.9, 
         borderTopLeftRadius: 30, 
         borderTopRightRadius: 30, 
     },
