@@ -1025,7 +1025,7 @@ function CasePage () {
     picture: {
         backgroundColor: 'rgba(0, 122, 255, 0.8)',
         width: width * 0.45,
-        height: width * 0.15,
+        height: width * 0.12,
         borderRadius: 5,
         marginTop: width * 0.08,
         marginLeft: width * 0.02

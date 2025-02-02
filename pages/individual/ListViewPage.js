@@ -276,17 +276,6 @@ const ListPage = () => {
                     >
                     <Image source={require('../../assets/icons/right-arrow.png')} style={styles.arrowIcon2}/>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={styles.new}
-                    onPress={() => {
-                        navigation.reset({
-                          index: 0,
-                          routes: [{ name: "Create New Case", params: {backTo: {name: "List View", params: {month: month, year: year}}}}],
-                        });
-                    }}
-                    >
-                    <Text allowFontScaling={false} style={styles.newText}>+</Text>
-                </TouchableOpacity>
             </View>
             <View style={styles.columns}>
                 <View style={styles.cell}>

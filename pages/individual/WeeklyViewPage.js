@@ -13,10 +13,30 @@ const { width, height } = Dimensions.get('window');
 
 const WeeklyViewPage = () => {
     const route = useRoute();
-    const [year, setYear] = useState(route.params?.year || new Date().getFullYear());
-    const [weekStart, setWeekStart] = useState(null);
-    const [month, setMonth] = useState(route.params?.month || new Date().getMonth());
+    const [year, setYear] = useState(route.params?.year || new Date().getFullYear()); // integer
+    const [month, setMonth] = useState(route.params?.month || new Date().getMonth()); // integer
+    const [weekStart, setWeekStart] = useState(route.params?.weekStart || new Date(new Date().getTime() - (1000*60*60*24*(new Date().getDay())))); // date object
+    const [weekArr, setWeekArr] = useState([]);
+    const [weekComp, setWeekComp] = useState();
     const [cases, setCases] = useState([]); 
+    const [style1, setStyle1] = useState(styles.regular); // other options .tall, .short
+    const [style2, setStyle2] = useState(styles.regular);
+    const [style3, setStyle3] = useState(styles.regular);
+    const [style4, setStyle4] = useState(styles.regular);
+    const [style5, setStyle5] = useState(styles.regular);
+    const [style6, setStyle6] = useState(styles.regular);
+    const [style7, setStyle7] = useState(styles.regular);
+    const styleOptions = [style1, style2, style3, style4, style5, style6, style7];
+    const setStyleOptions = [setStyle1, setStyle2, setStyle3, setStyle4, setStyle5, setStyle6, setStyle7];
+    const [caseStyle1, setCaseStyle1] = useState(styles.regularCase);
+    const [caseStyle2, setCaseStyle2] = useState(styles.regularCase);
+    const [caseStyle3, setCaseStyle3] = useState(styles.regularCase);
+    const [caseStyle4, setCaseStyle4] = useState(styles.regularCase);
+    const [caseStyle5, setCaseStyle5] = useState(styles.regularCase);
+    const [caseStyle6, setCaseStyle6] = useState(styles.regularCase);
+    const [caseStyle7, setCaseStyle7] = useState(styles.regularCase);
+    const caseStyleOptions = [caseStyle1, caseStyle2, caseStyle3, caseStyle4, caseStyle5, caseStyle6, caseStyle7];
+    const setCaseStyleOptions = [setCaseStyle1, setCaseStyle2, setCaseStyle3, setCaseStyle4, setCaseStyle5, setCaseStyle6, setCaseStyle7];
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
     const [openStyle, setOpenStyle] = useState(styles.icon3);
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
@@ -97,10 +117,26 @@ const WeeklyViewPage = () => {
         }, [])
     );*/
 
-    async function getCases (year, months) {
+    function formatTo12HourTime(dateString) {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          throw new Error("Invalid date string");
+        }
+        let hours = date.getHours();
+        const minutes = date.getMinutes();
+        const amPm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; 
+        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+        return `${hours}:${formattedMinutes} ${amPm}`;
+      }
+
+    async function getCases (year) {
+        let monthArr = [];
+        if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth()]}
+        else {monthArr = [weekStart.getMonth(), new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()]}
         const data = {
-            year: year,
-            months: months,
+            surgYear: weekStart.getFullYear(),
+            months: monthArr,
             userId: myMemory.userInfo.id,
         }
         const headers = {
@@ -114,7 +150,125 @@ const WeeklyViewPage = () => {
             .then(response => response.json())
             .then(data => {return data});
         // do something with the cases response data
+        setCases(response);
     }
+
+    function getDayString (myIndex) {
+        const dayArr = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        return dayArr[myIndex];
+    }
+
+    function getMonthString (myIndex) {
+        const monthArr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        return monthArr[myIndex];
+    }
+
+    function getFullMonthString (myIndex) {
+        const monthArr = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return monthArr[myIndex];
+    }
+
+    function setMyStyles (myIndex) {
+        if (styleOptions[myIndex] != styles.tall) {
+            setStyleOptions[myIndex](prev => styles.tall);
+            const tempArr = setStyleOptions.filter((item, index) => index != myIndex);
+            tempArr.map((item, index) => {
+                item(prev => styles.short);
+            })
+            setCaseStyleOptions[myIndex](prev => styles.tallCase);
+            const tempArr2 = setCaseStyleOptions.filter((item, index) => index != myIndex);
+            tempArr2.map((item, index) => {
+                item(prev => styles.shortCase);
+            })
+        } else {
+            setStyleOptions.map((item, index) => {
+                item(prev => styles.regular);
+            })
+            setCaseStyleOptions.map((item, index) => {
+                item(prev => styles.regularCase);
+            })
+        }
+        getWeek();
+    }
+
+    function fillWeekComp () {
+        setWeekComp(prev =>
+            weekArr.map((item, index) => (
+                <View key={item + "A" + index} style={styles.row}>
+                    <TouchableOpacity
+                        style={[styleOptions[index], {width: width * 0.25, borderWidth: width * 0.003, borderRadius: 5, padding: width * 0.01, marginLeft: width * 0.02, marginBottom: width * 0.01, opacity: 1, backgroundColor: "#333436", }]}
+                        onPress={() => setMyStyles(index)}
+                        >
+                        <Text allowFontScaling={false} style={{color: "#fff", fontSize: width * 0.04, width: width * 0.13, borderBottomWidth: width * 0.003, borderBottomColor: "#fff", fontWeight: "bold", }}>{getDayString(index)}</Text>
+                        <Text allowFontScaling={false} style={{color: "#fff"}}>{getMonthString(item.getMonth())}, {item.getDate()}</Text>
+                    </TouchableOpacity>
+                    <View style={[styleOptions[index], {flexDirection: "row", flexWrap: "wrap", borderColor: "#333436", marginLeft: - width * 0.02, width: width * 0.73, borderTopWidth: width * 0.003, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, borderRadius: 5, padding: width * 0.01, }]}>
+                        {cases.map((item2, index2) => {
+                            if (item.getDate() == new Date(item2.surgdate).getDate()) {
+                                return (
+                                    <TouchableOpacity 
+                                        key={item2.id + "B" + index2}
+                                        style={caseStyleOptions[index]}
+                                        onPress={() => {
+                                            navigation.reset({
+                                                index: 0,
+                                                routes: [{
+                                                    name: "Case Info",
+                                                    params: {
+                                                        caseProp: item2,
+                                                        backTo: {
+                                                            name: "Weekly View",
+                                                            params: {
+                                                                weekStart: weekStart,
+                                                                month: weekStart.getMonth(),
+                                                                year: weekStart.getFullYear()
+                                                            }
+                                                        }
+                                                    }
+                                                }]
+                                            })
+                                        }}
+                                        >
+                                        <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003,}}>{formatTo12HourTime(item2.surgdate)}</Text>
+                                        <Text allowFontScaling={false} style={{overflow: "hidden", }}>@{item2.hosp}</Text>
+                                        <Text allowFontScaling={false} style={{overflow: "hidden", }}>{item2.dr.slice(0,10)}...</Text>
+                                    </TouchableOpacity>
+                                )
+                            }
+                        })}
+                    </View>
+                </View>
+            ))
+        )
+    }
+
+    function getWeek () {
+        let dateArr = [];
+        for(let i=0;i<7;i++){dateArr = [...dateArr, new Date(weekStart.getTime() + (1000*60*60*24*i))]}
+        setWeekArr(prev => dateArr);
+        getCases();
+    }
+
+    function nextWeek () {
+        setWeekStart(prev => new Date(weekStart.getTime() + (1000*60*60*24*7)));
+    }
+
+    function prevWeek () {
+        setWeekStart(prev => new Date(weekStart.getTime() - (1000*60*60*24*7)));
+    }
+
+    function getDateString (myDate) {
+        if(myDate < 10){return '0' + String(myDate)}
+        else {return myDate}
+    }
+
+    useEffect(() => {
+        getWeek();
+    }, [weekStart])
+
+    useEffect(() => {
+        fillWeekComp();
+    }, [cases])
 
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
@@ -123,7 +277,19 @@ const WeeklyViewPage = () => {
                 onPress={() => {
                     navigation.reset({
                         index: 0,
-                        routes: [{name: 'Create New Case', params: {backTo: {name: 'Weekly View', params: {month: month, year: year}}}}]
+                        routes: [{
+                            name: 'Create New Case', 
+                            params: {
+                                backTo: {
+                                    name: 'Weekly View', 
+                                    params: {                                                                
+                                        weekStart: weekStart,                                                 
+                                        month: weekStart.getMonth(),
+                                        year: weekStart.getFullYear()
+                                    }
+                                }
+                            }
+                        }]
                     })
                 }}
                 >
@@ -149,8 +315,14 @@ const WeeklyViewPage = () => {
                       style={styles.option}
                       onPress={() => {
                         navigation.reset({
-                          index: 0,
-                          routes: [{ name: "Monthly View", params: { month: month, year: year } }],
+                            index: 0,
+                            routes: [{ 
+                                name: "Monthly View",
+                                params: {              
+                                    month: weekStart.getMonth(),
+                                    year: weekStart.getFullYear() 
+                                }
+                            }],
                         });
                       }}
                       >
@@ -160,8 +332,14 @@ const WeeklyViewPage = () => {
                       style={styles.option}
                       onPress={() => {
                         navigation.reset({
-                          index: 0,
-                          routes: [{ name: "List Cases", params: { month: month, year: year } }],
+                            index: 0,
+                            routes: [{ 
+                                name: "List Cases",
+                                params: {                
+                                    month: weekStart.getMonth(),
+                                    year: weekStart.getFullYear() 
+                                }
+                            }],
                         });
                       }}
                       >
@@ -171,8 +349,14 @@ const WeeklyViewPage = () => {
                       style={styles.option}
                       onPress={() => {
                         navigation.reset({
-                          index: 0,
-                          routes: [{ name: "List Trays", params: {month: month, year: year} }],
+                            index: 0,
+                            routes: [{
+                                name: "List Trays",
+                                params: {                                                                
+                                    month: weekStart.getMonth(),
+                                    year: weekStart.getFullYear()
+                                }
+                            }],
                         });
                       }}
                       >
@@ -182,8 +366,14 @@ const WeeklyViewPage = () => {
                       style={styles.option}
                       onPress={() => {
                         navigation.reset({
-                          index: 0,
-                          routes: [{ name: "Settings", params: {month: month, year: year} }],
+                            index: 0,
+                            routes: [{ 
+                                name: "Settings", 
+                                params: {                                                                
+                                    month: weekStart.getMonth(),
+                                    year: weekStart.getFullYear()
+                                }
+                            }],
                         });
                       }}
                       >
@@ -210,49 +400,67 @@ const WeeklyViewPage = () => {
                 </TouchableOpacity>
                 <View style={{backgroundColor: "#333436", width: width * 0.86, marginLeft: width * 0.01, marginTop: width * 0.025, marginBottom: width * 0.02, borderRadius: 30, flexDirection: "row"}}>
                     <TouchableOpacity
-                        onPress={() => {}}
+                        onPress={() => prevWeek()}
                         >
-                        <Text style={{color: "#fff", fontSize: width * 0.07, marginLeft: width * 0.02, marginTop: - width * 0.005, }}>{"<"}</Text>
+                        <Text style={{color: "#fff", fontSize: width * 0.065, marginLeft: width * 0.02, marginTop: - width * 0.005, }}>{"<"}</Text>
                     </TouchableOpacity>
                     <View style={styles.row}>
-                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.07, marginLeft: width * 0.01, width: width * 0.36, }}>JAN 28, </Text>
-                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.07, width: width * 0.36, textAlign: "right"}}>JAN 28, </Text>
+                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, marginLeft: width * 0.01, width: width * 0.28, }}>{getMonthString(weekStart.getMonth())}, {getDateString(weekStart.getDate())}</Text>
+                        <Text allowFontScaling={false} style={{color: "#fff", fontSize: width * 0.065, fontStyle: "italic", }}>{weekStart.getFullYear()}</Text>
+                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, width: width * 0.28, textAlign: "right"}}>{getMonthString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth())}, {getDateString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getDate())}</Text>
                     </View>
                     <TouchableOpacity
-                        onPress={() => {}}>
-                        <Text style={{color: "#fff", fontSize: width * 0.07, marginLeft: width * 0.01, marginTop: - width * 0.005, }}>{">"}</Text>
+                        onPress={() => nextWeek()}
+                        >
+                        <Text style={{color: "#fff", fontSize: width * 0.065, marginLeft: width * 0.01, marginTop: - width * 0.005, }}>{">"}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
-
+            <View>
+                {weekComp}
+            </View>
         </SafeAreaView>
     );
   };
 
 const styles = StyleSheet.create({
-    container: {
-        marginTop: 10,
-        marginBottom: 40,
-    },
+
     row: {
         flexDirection: 'row'
     },
-    year: {
-        fontSize: width * 0.1,
-        marginLeft: width * 0.18,
-        fontWeight: "bold",
-        opacity: "0.5"
+    regular: {
+        height: width * 0.235, 
     },
-    weekSelect: {
-        flexDirection: 'row',
-        marginBottom: 15,
-        width: width * 0.97,
-        textAlign: 'center' 
+    tall: {
+        height: width, 
     },
-    title: {
-        fontSize: width * 0.06,
-        marginTop: 5,
-        textAlign: 'center',
+    short: {
+        height: width * 0.1075, 
+    },
+    regularCase: {
+        marginLeft: width * 0.02,
+        backgroundColor: "#dae9f7",
+        height: width * 0.21,
+        width: width * 0.25,
+        borderRadius: 5,
+        padding: width * 0.01,
+    },
+    shortCase: {
+        marginLeft: width * 0.02,
+        backgroundColor: "#dae9f7",
+        height: width * 0.08,
+        width: width * 0.2,
+        borderRadius: 5,
+        padding: width * 0.01,
+        overflow: "hidden",
+    },
+    tallCase: {
+        marginLeft: width * 0.02,
+        backgroundColor: "#dae9f7",
+        height: width * 0.21,
+        width: width * 0.68,
+        borderRadius: 5,
+        padding: width * 0.01,
     },
     refreshArrowStyle: {
         height: width * 0.12,

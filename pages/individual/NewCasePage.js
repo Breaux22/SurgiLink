@@ -326,7 +326,7 @@ const CasePage = () => {
     }
 
     async function getMonthString (monthInt) {
-        const months = ['January', 'Februrary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return months[monthInt];
     }
 
@@ -360,7 +360,11 @@ const CasePage = () => {
                     const responseData = await response.json()
                     navigation.reset({
                       index: 0,
-                      routes: [{ name: 'Case Info', params: {backTo: backTo, caseProp: responseData}}],
+                      routes: [{ 
+                          name: 'Case Info',
+                          params: {
+                              backTo: backTo, 
+                              caseProp: responseData}}],
                     });
                 }
             })
