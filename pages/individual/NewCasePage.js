@@ -7,6 +7,7 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import FullCaseData from '../../components/FullCaseData/FullCaseData';
 import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
+import LoanerSet from '../../components/LoanerSet/LoanerSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { useMemory } from '../../MemoryContext';
@@ -610,11 +611,17 @@ const CasePage = () => {
                 <Text  allowFontScaling={false}  style={styles.title}>Sets Needed & Status:</Text>                
                 <View>
                     <View style={styles.elementsContainer}>
-                        {trayList.map((item, index) => (
-                            <View key={item.trayName + index}>
-                                <ConsignmentSet sendDataToParent={handleChildData} myTrays={myTrays} statuses={statuses} props={item} index={index}/>
-                            </View>
-                        ))}
+                        {trayList.map((item, index) => {
+                            if (item.loaner === false) {
+                                return (<View key={item.trayName + index}>
+                                    <ConsignmentSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                </View>)
+                            } else {
+                                return (<View key={item.trayName + index}>
+                                    <LoanerSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                </View>)
+                            }
+                        })}
                     </View>
                     <View style={loanerStyle}>
                         <TextInput
@@ -637,8 +644,7 @@ const CasePage = () => {
                     </View>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: "?", location: "?"}]);
-                            setLoanerStyle(styles.collapsed);
+                            setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: "?", location: "?", loaner: false}]);
                         }}>
                             <View style={styles.row}>
                                 <Text  allowFontScaling={false}  style={styles.title}>Select From List</Text>
@@ -646,7 +652,7 @@ const CasePage = () => {
                             </View>                    
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setLoanerStyle(styles.loanerBox);
+                            setTrayList((trayList) => [...trayList, {trayName: "", trayStatus: "?", location: "", loaner: true}]);
                         }}>
                             <View style={styles.row}>
                                 <Text  allowFontScaling={false}  style={styles.title}>Type In New Tray</Text>

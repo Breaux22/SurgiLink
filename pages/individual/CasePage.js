@@ -6,6 +6,7 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import FullCaseData from '../../components/FullCaseData/FullCaseData';
 import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
+import LoanerSet from '../../components/LoanerSet/LoanerSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
@@ -29,7 +30,7 @@ function CasePage () {
     const [statuses, setStatuses] = useState([]);
     const [loanerStatus, setLoanerStatus] = useState("?"); // status of new tray
     const [loanerName, setLoanerName] = useState("Choose Tray..."); // name of new tray
-    const [loanerLocation, setLoanerLocation] = useState("?");
+    const [loanerLocation, setLoanerLocation] = useState("");
     const [lsStyle, setLsStyle] = useState(styles.collapsed);
     const [loanerStyle, setLoanerStyle] = useState(styles.collapsed);
     const [timeZone, setTimeZone] = useState("PST (GMT-8)"); // time zone
@@ -179,12 +180,39 @@ function CasePage () {
             const tempArr = [...trayList];
             tempArr[index] = newArr[0];
             setTrayList(prev => tempArr);
+        } else if (data.myAction == "updateLoanerLocation") {
+            updateTrayLocation(data);
+        } else if (data.myAction == "updateLoanerName") {
+            updateLoanerName(data);
+        } else if (data.myAction == "updateLoanerStatus") {
+            updateTrayStatus(data);
         } else {
             const tempArr = [...trayList];
             tempArr[index] = data;
             setTrayList(prev => tempArr);
         }
     };
+
+    async function updateLoanerName (tray) {
+        const data = {
+            trayId: tray.trayId,
+            newName: tray.trayName,
+            userId: myMemory.userInfo.id,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers' :{
+                'content-type': 'application/json',
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/updateTrayName';
+        const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok) {console.error("Error updating loaner tray name.")}
+            })
+        return;
+    }
 
     async function updateTrayStatus (tray) {
         const data = {
@@ -418,6 +446,7 @@ function CasePage () {
       );
 
     async function updateCase () {
+        console.log(trayList)
         const caseData = {
             caseId: caseId,
             dateString: new Date(surgdate - (1000*60*60*8)),
@@ -732,11 +761,17 @@ function CasePage () {
                 <Text allowFontScaling={false} style={styles.title}>Sets Needed & Status:</Text>
                 <View>
                     <View>
-                        {trayList.map((item, index) => (
-                            <View key={item.trayName + index}>
-                                <ConsignmentSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
-                            </View>
-                        ))}
+                        {trayList.map((item, index) => {
+                            if (item.loaner === false) {
+                                return (<View key={item.trayName + index}>
+                                    <ConsignmentSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                </View>)
+                            } else {
+                                return (<View key={item.trayName + index}>
+                                    <LoanerSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                </View>)
+                            }
+                        })}
                     </View>
                     <View style={loanerStyle}>
                         <TextInput
@@ -748,7 +783,7 @@ function CasePage () {
                         <TouchableOpacity
                             style={{backgroundColor: "#d6d6d7", width: width * 0.24, height: width * 0.08, marginLeft: width * 0.02, borderRadius: 5, }}
                             onPress={() => {
-                                setTrayList((trayList) => [...trayList, {trayName: loanerName, trayStatus: 'Dirty', location: ''}]);
+                                setTrayList((trayList) => [...trayList, {trayName: loanerName, trayStatus: 'Dirty', location: '', loaner: false}]);
                                 addLoanerToDB()
                                 setLoanerName('');
                                 setLoanerStyle(styles.collapsed);
@@ -758,20 +793,22 @@ function CasePage () {
                         </TouchableOpacity>
                     </View>
                     <View style={styles.row}>
-                        <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: '?', location: '?'}]);
+                        <TouchableOpacity 
+                            style={{width: width * 0.522, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} 
+                            onPress={() => {
+                                setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: '?', location: '', loaner: false}]);
                             //setLoanerStyle(styles.collapsed);
-                        }}>
+                            }}>
                             <View style={styles.row}>
-                                <Text allowFontScaling={false} style={styles.title}>Select From List</Text>
+                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Consignment Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setLoanerStyle(styles.loanerBox);
+                        <TouchableOpacity style={{width: width * 0.418, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} onPress={() => {
+                            setTrayList((trayList) => [...trayList, {trayName: "", trayStatus: '?', location: '', loaner: true,}]);
                         }}>
-                            <View style={styles.row}>
-                                <Text allowFontScaling={false} style={styles.title}>Type In New Tray</Text>
+                            <View style={[styles.row, {textAlign: "center"}]}>
+                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Loaner Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>

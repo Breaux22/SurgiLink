@@ -22,11 +22,11 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   };
 
   const sendMessage = (myAction='', one, two, three) => {
-    sendDataToParent({myAction: myAction, trayName: one, location: two, trayStatus: three}, index);
+    sendDataToParent({myAction: myAction, trayId: props.id, trayName: one, location: two, trayStatus: three}, index);
   };
 
   const updateLocation = (newLoc) => {
-    sendMessage("updateLocation", trayName, newLoc, trayStatus)
+    sendMessage("updateLoanerLocation", trayName, newLoc, trayStatus)
   }
 
   const debouncedInputChange = useCallback(_.debounce(updateLocation, 1000), []);
@@ -41,6 +41,23 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
       debouncedInputChange.cancel();
     };
   }, [location, debouncedInputChange]);
+
+  const updateName = (newName) => {
+    sendMessage("updateLoanerName", newName, location, trayStatus)
+  }
+
+  const debouncedInputChange2 = useCallback(_.debounce(updateName, 1000), []);
+
+  // useEffect to watch for changes in inputValue
+  useEffect(() => {
+    if (trayName) {
+      debouncedInputChange2(trayName);
+    }
+    // Cleanup function to cancel debounce on unmount
+    return () => {
+      debouncedInputChange2.cancel();
+    };
+  }, [trayName, debouncedInputChange2]);
   
   function getColorA () {
     if (trayStatus == "Sterile") {
@@ -70,9 +87,9 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     <View style={styles.container2}>
       <View style={styles.row}>
         <Text  allowFontScaling={false}  style={styles.title}>Tray #{index+1}</Text>
-        <Text allowFontscaling={false} style={{backgroundColor: "#99f0b0", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.35,  }}>CONSIGNMENT</Text>
+        <Text allowFontscaling={false} style={{backgroundColor: "rgba(0, 122, 255, 0.8)", color: "#fff", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.2,  }}>LOANER</Text>
         <TouchableOpacity 
-          style={{marginTop: width * 0.015, marginLeft: width * 0.28, }}
+          style={{marginTop: width * 0.015, marginLeft: width * 0.435, }}
           onPress={() => {
             sendMessage("remove", trayName, location, trayStatus);
           }}
@@ -80,44 +97,13 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           <Text allowFontScaling={false} style={{color:"#e31e1e"}}>Remove</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.textBox} onPress={() => {
-        if (snStyle == styles.collapsed) {
-            setSnStyle(styles.snStyle);
-            setSpStyle(styles.collapsed);
-        } else {
-            if (removeStyle == styles.container) {
-              setSetNeeded('Choose Tray...');
-            } 
-            setSnStyle(styles.collapsed);
-            setRemoveStyle(styles.collapsed);
-        }
-      }}>
-        <Text  allowFontScaling={false} style={{color: "#39404d"}} >{setNeeded}</Text>
-      </TouchableOpacity>
-      <View style={snStyle}>
-        <Picker
-          selectedValue={setNeeded}
-          onValueChange={(itemValue, itemIndex) => {
-            if (setNeeded != "Choose Tray...") {
-              // remove previous chosen set from case
-              sendMessage("remove", setNeeded, location, trayStatus)
-              setSetNeeded(itemValue);
-              sendMessage("chooseTray", itemValue, location, trayStatus);
-              setRemoveStyle(styles.collapsed);
-            } else if (itemValue != "Choose Tray...") {
-              setSetNeeded(itemValue);
-              sendMessage("chooseTray", itemValue, location, trayStatus);
-              setRemoveStyle(styles.collapsed);
-            } 
-          }}
-          style={styles.picker}
-        >
-          <Picker.Item label="Choose Tray..." value="Choose Tray..."/>
-          {myTrays.map((tray, index) => (
-            <Picker.Item key={tray.trayName + index} label={tray.trayName} value={tray.trayName} />
-          ))}
-        </Picker>
-      </View>
+      <TextInput
+          placeholder="Enter Tray Name..."
+          allowFontScaling={false}
+          value={trayName}
+          onChangeText={(input) => setTrayName(input)}
+          style={{width: width * 0.91, height: width * 0.09, backgroundColor: "#ededed", borderRadius: 5, marginLeft: width * 0.02, marginTop: width * 0.02, padding: width * 0.02, }}
+          />
       <View style={styles.row}>
         <Image source={require('../../assets/icons/enter.png')} style={{width: width * 0.09, height: width * 0.09, marginLeft: width * 0.04,}}/>
         <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginTop: width * 0.02, backgroundColor: "#ededed", borderTopLeftRadius: 5, borderBottomLeftRadius: 5, marginLeft: width * 0.02, paddingLeft: width * 0.02, paddingTop: width * 0.005}}>@</Text>
@@ -134,7 +120,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           style={getColorA()}
           onPress={() => {
             setTrayStatus("Sterile");
-            sendMessage("updateStatus", trayName, location, "Sterile");
+            sendMessage("updateLoanerStatus", trayName, location, "Sterile");
           }}
           >
           <Text allowFontScaling={false} style={styles.statusText}>Sterile</Text>
@@ -143,7 +129,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           style={getColorB()}
           onPress={() => {
             setTrayStatus("?");
-            sendMessage("updateStatus", trayName, location, "");
+            sendMessage("updateLoanerStatus", trayName, location, "?");
           }}
           >
           <Text allowFontScaling={false} style={styles.statusText}>?</Text>
@@ -152,7 +138,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           style={getColorC()}
           onPress={() => {
             setTrayStatus("Dirty");
-            sendMessage("updateStatus", trayName, location, "Dirty");
+            sendMessage("updateLoanerStatus", trayName, location, "Dirty");
           }}
           >
           <Text allowFontScaling={false} style={styles.statusText}>Dirty</Text>

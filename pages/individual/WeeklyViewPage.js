@@ -273,7 +273,7 @@ const WeeklyViewPage = () => {
         } else {
             let caseArr = cases.filter((item) => new Date(item.surgdate).getDate() == myDate.getDate());
             return (
-                <ScrollView>{
+                <ScrollView style={{height: width * 0.98}}>{
                     caseArr.map((item, index) => (
                         <TouchableOpacity
                             key={item + index}
