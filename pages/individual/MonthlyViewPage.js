@@ -18,8 +18,8 @@ const { width, height } = Dimensions.get('window');
 const MonthlyViewPage = () => {
     const route = useRoute();
     const [monthlyCaseData, setMonthlyCaseData] = useState([]);
-    const [currMonth, setCurrMonth] = useState(route.params?.month || new Date().getMonth());
-    const [currYear, setCurrYear] = useState(route.params?.year || new Date().getFullYear());
+    const [currMonth, setCurrMonth] = useState(route.params?.month);
+    const [currYear, setCurrYear] = useState(route.params?.year);
     const [selectedDate, setSelectedDate] = useState();
     const [calendarComp, setCalendarComp] = useState();
     const [casesComp, setCasesComp] = useState();
@@ -148,17 +148,20 @@ const MonthlyViewPage = () => {
         const response = await fetch(url, headers)
             .then(response => response.json())
             .then(data => {return data})
+        console.log(response);
         setMonthlyCaseData(prev => response);
     }
 
     function generateBlockList (myDate) {
         const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
         return (
-            caseList.map((item, index) => (
-                <View key={item.id + "A"} style={{borderRadius: 2, width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: "#a6f296"}}>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.025}}>{item.hosp.slice(0,9)}</Text>
-                </View>
-            )) 
+            <View style={{height: width * 0.2, overflow: "hidden"}}>
+                {caseList.map((item, index) => (
+                    <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
+                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                    </View>
+                ))}
+            </View>
         )
     }
 
@@ -189,7 +192,7 @@ const MonthlyViewPage = () => {
             setCasesComp(prev =>
                 monthlyCaseData.map((item, index) => (
                     <TouchableOpacity
-                        key={item.surgdate + "B"}
+                        key={item.surgdate + "Z" + index}
                         onPress={() => {
                             navigation.reset({
                                 index: 0,
@@ -197,13 +200,15 @@ const MonthlyViewPage = () => {
                             })
                         }}
                         >
-                        <View key={item.id} style={{borderRadius: 5, width: width * 0.9, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: "#dae9f7"}}>
+                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: width * 0.25, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: item.color, }}>
                             <View style={[styles.row, { borderBottomWidth: width * 0.003, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, paddingLeft: width * 0.01, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, marginBottom: width * 0.02, }}>w/ {item.dr}</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
                     </TouchableOpacity>
                 ))
@@ -219,7 +224,7 @@ const MonthlyViewPage = () => {
             setCasesComp(prev =>
                 caseList.map((item, index) => (
                     <TouchableOpacity
-                        key={item.surgdate + "B"}
+                        key={item.surgdate + "B" + index}
                         onPress={() => {
                             navigation.reset({
                                 index: 0,
@@ -227,13 +232,15 @@ const MonthlyViewPage = () => {
                             })
                         }}
                         >
-                        <View key={item.id} style={{borderRadius: 5, width: width * 0.9, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: "#dae9f7"}}>
+                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: width * 0.25, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: item.color, }}>
                             <View style={[styles.row, { borderBottomWidth: width * 0.003, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, paddingLeft: width * 0.01, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, marginBottom: width * 0.02, }}>w/ {item.dr}</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
                     </TouchableOpacity>
                 ))
@@ -269,8 +276,8 @@ const MonthlyViewPage = () => {
                     </View>
                 ))}
                 {dateArr.map((item, index) => {
-                    let styleChoice = {width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
-                    const styleB = {backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    let styleChoice = { width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
                     const today = new Date();
                     if (today.getFullYear() == currYear && today.getMonth() == currMonth && today.getDate() == item+1){styleChoice = styleB}
                     return (
@@ -324,8 +331,8 @@ const MonthlyViewPage = () => {
                     </View>
                 ))}
                 {dateArr.map((item, index) => {
-                    let styleChoice = {width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
-                    const styleB = {backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    let styleChoice = { width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
                     const today = new Date();
                     if (today.getFullYear() == currYear && today.getMonth() == currMonth && today.getDate() == item+1){styleChoice = styleB}
                     return (

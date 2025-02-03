@@ -37,6 +37,7 @@ const WeeklyViewPage = () => {
     const [caseStyle7, setCaseStyle7] = useState(styles.regularCase);
     const caseStyleOptions = [caseStyle1, caseStyle2, caseStyle3, caseStyle4, caseStyle5, caseStyle6, caseStyle7];
     const setCaseStyleOptions = [setCaseStyle1, setCaseStyle2, setCaseStyle3, setCaseStyle4, setCaseStyle5, setCaseStyle6, setCaseStyle7];
+    const [direction, setDirection] = useState(true);
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
     const [openStyle, setOpenStyle] = useState(styles.icon3);
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
@@ -130,7 +131,7 @@ const WeeklyViewPage = () => {
         return `${hours}:${formattedMinutes} ${amPm}`;
       }
 
-    async function getCases (year) {
+    async function getCases () {
         let monthArr = [];
         if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth()]}
         else {monthArr = [weekStart.getMonth(), new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()]}
@@ -150,7 +151,7 @@ const WeeklyViewPage = () => {
             .then(response => response.json())
             .then(data => {return data});
         // do something with the cases response data
-        setCases(response);
+        setCases(prev => response);
     }
 
     function getDayString (myIndex) {
@@ -175,20 +176,146 @@ const WeeklyViewPage = () => {
             tempArr.map((item, index) => {
                 item(prev => styles.short);
             })
-            setCaseStyleOptions[myIndex](prev => styles.tallCase);
-            const tempArr2 = setCaseStyleOptions.filter((item, index) => index != myIndex);
-            tempArr2.map((item, index) => {
-                item(prev => styles.shortCase);
-            })
         } else {
             setStyleOptions.map((item, index) => {
                 item(prev => styles.regular);
             })
-            setCaseStyleOptions.map((item, index) => {
-                item(prev => styles.regularCase);
-            })
         }
         getWeek();
+    }
+
+    function fillDailyCases (myDate, index) {
+        if (styleOptions[index] == styles.regular) {
+            let caseArr = cases.filter((item) => new Date(item.surgdate).getDate() == myDate.getDate());
+            return (
+                <ScrollView horizontal>{
+                    caseArr.map((item, index) => (
+                        <TouchableOpacity
+                            key={item + index}
+                            style={{     
+                                marginLeft: width * 0.02,
+                                marginBottom: width * 0.02,
+                                backgroundColor: item.color,
+                                height: width * 0.21,
+                                width: width * 0.25,
+                                borderRadius: 5,
+                                padding: width * 0.01,
+                            }}
+                            onPress={() => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{
+                                        name: "Case Info",
+                                        params: {
+                                            backTo: {
+                                                name: "Weekly View",
+                                                params: {
+                                                    weekStart: weekStart,
+                                                    month: weekStart.getMonth(),
+                                                    year: weekStart.getFullYear(),
+                                                }
+                                            },
+                                            caseProp: item
+                                        }
+                                    }]
+                                })
+                            }}
+                            >
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{}}>{item.proctype}</Text>
+                        </TouchableOpacity>
+                    ))
+                }</ScrollView>
+            )
+        } else if (styleOptions[index] == styles.short) {
+            let caseArr = cases.filter((item) => new Date(item.surgdate).getDate() == myDate.getDate());
+            return (
+                <ScrollView horizontal>{
+                    caseArr.map((item, index) => (
+                        <TouchableOpacity
+                            key={item + index}
+                            style={{
+                                marginLeft: width * 0.02,
+                                marginBottom: width * 0.02,
+                                backgroundColor: item.color,
+                                height: width * 0.08,
+                                width: width * 0.2,
+                                borderRadius: 5,
+                                overflow: "hidden",
+                            }}
+                            onPress={() => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{
+                                        name: "Case Info",
+                                        params: {
+                                            backTo: {
+                                                name: "Weekly View",
+                                                params: {
+                                                    weekStart: weekStart,
+                                                    month: weekStart.getMonth(),
+                                                    year: weekStart.getFullYear(),
+                                                }
+                                            },
+                                            caseProp: item
+                                        }
+                                    }]
+                                })
+                            }}
+                            >
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, width: width * 0.17, marginLeft: width * 0.01, fontSize: width * 0.03, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{fontWeight: "bold", marginLeft: width * 0.01, }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                        </TouchableOpacity>
+                    ))
+                }</ScrollView>
+            )
+        } else {
+            let caseArr = cases.filter((item) => new Date(item.surgdate).getDate() == myDate.getDate());
+            return (
+                <ScrollView>{
+                    caseArr.map((item, index) => (
+                        <TouchableOpacity
+                            key={item + index}
+                            style={{
+                                marginLeft: width * 0.02,
+                                marginBottom: width * 0.01,
+                                backgroundColor: item.color,
+                                minHeight: width * 0.21,
+                                width: width * 0.68,
+                                borderRadius: 5,
+                                padding: width * 0.01,
+                            }}
+                            onPress={() => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{
+                                        name: "Case Info",
+                                        params: {
+                                            backTo: {
+                                                name: "Weekly View",
+                                                params: {
+                                                    weekStart: weekStart,
+                                                    month: weekStart.getMonth(),
+                                                    year: weekStart.getFullYear(),
+                                                }
+                                            },
+                                            caseProp: item
+                                        }
+                                    }]
+                                })
+                            }}
+                            >
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{}}>Procedure: {item.proctype !== "" ? item.proctype : "~"}</Text>
+                            <Text allowFontScaling={false}>Notes:</Text>
+                            <Text allowFontScaling={false}>{item.notes !== "" ? item.notes : "~"}</Text>
+                        </TouchableOpacity>
+                    ))
+                }</ScrollView>
+            )
+        }
     }
 
     function fillWeekComp () {
@@ -200,42 +327,10 @@ const WeeklyViewPage = () => {
                         onPress={() => setMyStyles(index)}
                         >
                         <Text allowFontScaling={false} style={{color: "#fff", fontSize: width * 0.04, width: width * 0.13, borderBottomWidth: width * 0.003, borderBottomColor: "#fff", fontWeight: "bold", }}>{getDayString(index)}</Text>
-                        <Text allowFontScaling={false} style={{color: "#fff"}}>{getMonthString(item.getMonth())}, {item.getDate()}</Text>
+                        <Text allowFontScaling={false} style={{color: "#fff"}}>{getMonthString(item.getMonth())} {item.getDate()}</Text>
                     </TouchableOpacity>
-                    <View style={[styleOptions[index], {flexDirection: "row", flexWrap: "wrap", borderColor: "#333436", marginLeft: - width * 0.02, width: width * 0.73, borderTopWidth: width * 0.003, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, borderRadius: 5, padding: width * 0.01, }]}>
-                        {cases.map((item2, index2) => {
-                            if (item.getDate() == new Date(item2.surgdate).getDate()) {
-                                return (
-                                    <TouchableOpacity 
-                                        key={item2.id + "B" + index2}
-                                        style={caseStyleOptions[index]}
-                                        onPress={() => {
-                                            navigation.reset({
-                                                index: 0,
-                                                routes: [{
-                                                    name: "Case Info",
-                                                    params: {
-                                                        caseProp: item2,
-                                                        backTo: {
-                                                            name: "Weekly View",
-                                                            params: {
-                                                                weekStart: weekStart,
-                                                                month: weekStart.getMonth(),
-                                                                year: weekStart.getFullYear()
-                                                            }
-                                                        }
-                                                    }
-                                                }]
-                                            })
-                                        }}
-                                        >
-                                        <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003,}}>{formatTo12HourTime(item2.surgdate)}</Text>
-                                        <Text allowFontScaling={false} style={{overflow: "hidden", }}>@{item2.hosp}</Text>
-                                        <Text allowFontScaling={false} style={{overflow: "hidden", }}>{item2.dr.slice(0,10)}...</Text>
-                                    </TouchableOpacity>
-                                )
-                            }
-                        })}
+                    <View style={[styleOptions[index], {overflow: "hidden", flexDirection: "row", flexWrap: "wrap", borderColor: "#333436", marginLeft: - width * 0.02, width: width * 0.73, borderTopWidth: width * 0.003, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, borderRadius: 5, padding: width * 0.01, }]}>
+                        {fillDailyCases(item, index)}
                     </View>
                 </View>
             ))
@@ -395,7 +490,9 @@ const WeeklyViewPage = () => {
                 <View style={backBlur}></View>
             </View>
             <View style={styles.row}>
-                <TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => getCases()}
+                    >
                     <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.09, height: width * 0.09, marginLeft: width * 0.02, marginTop: width * 0.025, }}/>
                 </TouchableOpacity>
                 <View style={{backgroundColor: "#333436", width: width * 0.86, marginLeft: width * 0.01, marginTop: width * 0.025, marginBottom: width * 0.02, borderRadius: 30, flexDirection: "row"}}>
@@ -405,9 +502,9 @@ const WeeklyViewPage = () => {
                         <Text style={{color: "#fff", fontSize: width * 0.065, marginLeft: width * 0.02, marginTop: - width * 0.005, }}>{"<"}</Text>
                     </TouchableOpacity>
                     <View style={styles.row}>
-                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, marginLeft: width * 0.01, width: width * 0.28, }}>{getMonthString(weekStart.getMonth())}, {getDateString(weekStart.getDate())}</Text>
+                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, marginLeft: width * 0.01, width: width * 0.28, }}>{getMonthString(weekStart.getMonth())} {getDateString(weekStart.getDate())},</Text>
                         <Text allowFontScaling={false} style={{color: "#fff", fontSize: width * 0.065, fontStyle: "italic", }}>{weekStart.getFullYear()}</Text>
-                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, width: width * 0.28, textAlign: "right"}}>{getMonthString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth())}, {getDateString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getDate())}</Text>
+                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.065, width: width * 0.28, textAlign: "right"}}>{getMonthString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth())} {getDateString(new Date(weekStart.getTime() + (1000*60*60*24*7)).getDate())}</Text>
                     </View>
                     <TouchableOpacity
                         onPress={() => nextWeek()}
@@ -424,7 +521,6 @@ const WeeklyViewPage = () => {
   };
 
 const styles = StyleSheet.create({
-
     row: {
         flexDirection: 'row'
     },
@@ -439,6 +535,7 @@ const styles = StyleSheet.create({
     },
     regularCase: {
         marginLeft: width * 0.02,
+        marginBottom: width * 0.02,
         backgroundColor: "#dae9f7",
         height: width * 0.21,
         width: width * 0.25,
@@ -447,17 +544,18 @@ const styles = StyleSheet.create({
     },
     shortCase: {
         marginLeft: width * 0.02,
+        marginBottom: width * 0.02,
         backgroundColor: "#dae9f7",
         height: width * 0.08,
         width: width * 0.2,
         borderRadius: 5,
-        padding: width * 0.01,
         overflow: "hidden",
     },
     tallCase: {
         marginLeft: width * 0.02,
+        marginBottom: width * 0.01,
         backgroundColor: "#dae9f7",
-        height: width * 0.21,
+        minHeight: width * 0.21,
         width: width * 0.68,
         borderRadius: 5,
         padding: width * 0.01,
