@@ -135,7 +135,7 @@ const ListPage = () => {
         return monthArr[myMonth];
     }
 
-    async function getTrays (fuArray) {
+    async function getTrays () {
         const data = {
             userId: myMemory.userInfo.id,
         }
@@ -151,6 +151,7 @@ const ListPage = () => {
             .then(response => response.json())
             .then(data => {
                 setTrays(prev => data);
+                return;
             })
         return;
     }
@@ -175,9 +176,9 @@ const ListPage = () => {
         return;
     }
 
-    async function saveTrayLocation (index) {
+    async function updateTrayLocation (index) {
         const data = {
-            trayId: trays[index].id,
+            trayId: currTrayObj.id,
             userId: myMemory.userInfo.id,
             location: location
         }
@@ -189,17 +190,17 @@ const ListPage = () => {
             'body': JSON.stringify(data)
         }
         const url = 'https://surgiflow.replit.app/updateTrayLocation';
-        const response = await fetch(url, headers)
-        setLocation('');
+        const response = await fetch(url, headers);
         getTrays();
+        getTrayUses();
         return;
     }
 
-    async function updateTrayStatus () {
+    async function updateTrayStatus (myStatus) {
         const data = {
-            trayName: currTray,
+            trayId: currTrayObj.id,
             userId: myMemory.userInfo.id,
-            trayStatus: currStatus
+            trayStatus: myStatus
         }
         const headers = {
             'method': 'POST',
@@ -209,12 +210,30 @@ const ListPage = () => {
             'body': JSON.stringify(data)
         }
         const url = 'https://surgiflow.replit.app/updateTrayStatus';
-        const response = await fetch(url, headers)
+        const response = await fetch(url, headers);
+        getTrays();
+        getTrayUses();
         return;
     }
 
     async function updateTrayName () {
-        //
+        const data = {
+            trayId: currTrayObj.id,
+            newName: currTray,
+            userId: myMemory.userInfo.id,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json'
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/updateTrayName';
+        const response = await fetch(url, headers)
+        getTrays();
+        getTrayUses();
+        return;
     }
 
     function formatDate(dateInput) {
@@ -272,41 +291,47 @@ const ListPage = () => {
     }
 
     function fillUsesComp (myTray, myIndex) {
-        const usesArr = futureUses.filter((item) => 
-            new Date().getFullYear() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getFullYear()
-            && new Date().getMonth() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getMonth()
-            && new Date().getDate() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getDate()
-            && item.trayId == myTray.id);
-        setCurrTray(prev => myTray.trayName);
-        setLocation(prev => myTray.location);
-        setCurrStatus(prev => myTray.trayStatus);
-        if (usesArr.length > 0) {
-            setUsesComp(prev => 
-                <View>
-                    <ScrollView style={{height: height * 0.465}}>
-                        {usesArr.map((item, index) => (
-                            <TouchableOpacity
-                                key={item + index}
-                                style={{backgroundColor: item.color, width: width * 0.85, minHeight: width * 0.3, borderRadius: 5, borderWidth: width * 0.002, marginBottom: width * 0.02, paddingLeft: width * 0.02, paddingBottom: width * 0.01, }}
-                                >
-                                <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>{formatTo12HourTime(item.surgdate)}</Text>
-                                <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
-                                <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
-                                <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>
-                                <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.notes !== '' ? item.notes : "~"}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            )
-        } else {
-            setUsesComp(prev => 
-                <View>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, fontStyle: "italic", marginLeft: width * 0.02, }}>None.</Text>
-                </View>
-            )   
-        }
-        setPrevStyle(styles.preview);
+        setFutureUses(prevFutureUses => {
+            const usesArr = prevFutureUses.filter((item) => 
+                new Date().getFullYear() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getFullYear()
+                && new Date().getMonth() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getMonth()
+                && new Date().getDate() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getDate()
+                && item.trayId == myTray.id);
+            setCurrTray(prev => myTray.trayName);
+            setCurrTrayObj(myTray);
+            setLocation(prev => myTray.location);
+            setCurrStatus(prev => myTray.trayStatus);
+            if (usesArr.length > 0) {
+                setUsesComp(prev => 
+                    <View>
+                        <ScrollView style={{height: height * 0.465}}>
+                            {usesArr.map((item, index) => (
+                                <TouchableOpacity
+                                    key={item + index}
+                                    style={{backgroundColor: item.color, width: width * 0.85, minHeight: width * 0.3, borderRadius: 5, borderWidth: width * 0.002, marginBottom: width * 0.02, paddingLeft: width * 0.02, paddingBottom: width * 0.01, }}
+                                    >
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>{formatTo12HourTime(item.surgdate)}</Text>
+                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
+                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.notes !== '' ? item.notes : "~"}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )
+            } else {
+                setUsesComp(prev => 
+                    <View>
+                        <Text allowFontScaling={false} style={{fontSize: width * 0.05, fontStyle: "italic", marginLeft: width * 0.02, }}>None.</Text>
+                    </View>
+                )   
+            }
+            setPrevStyle(styles.preview);
+            
+            // keep state of future uses
+            return prevFutureUses;
+        })
     }
 
     function fillTraysComp () {
@@ -354,17 +379,8 @@ const ListPage = () => {
 
     useEffect(() => {
         getButtonColor();
-        updateTrayStatus();
+        //updateTrayStatus();
     }, [currStatus])
-
-    useEffect(() => {
-        if (futureUses !== []) {
-            console.log("Future Uses Updated")
-            //console.log(futureUses);
-        } else if (futureUses == []) {
-            console.log("Future Uses Still Empty")
-        }
-    }, [futureUses])
 
     return (
         <SafeAreaView style={styles.container}>
@@ -481,6 +497,9 @@ const ListPage = () => {
             <ScrollView style={{maxHeight: height * 0.74, }}>
                 {traysComp}
             </ScrollView>
+            
+            {/* #### BEGIN PREVIEW SECTION #### */}
+            
             <View style={prevStyle}>
                 <View style={{backgroundColor: "#fff", width: width * 0.9, height: height * 0.8, marginLeft: width * 0.05, marginTop: width * 0.07, padding: width * 0.02, }}>
                     <TouchableOpacity
@@ -491,6 +510,7 @@ const ListPage = () => {
                         >
                         <Image source={require('../../assets/icons/close.png')} style={{width: width * 0.1, height: width * 0.1, }}/>
                     </TouchableOpacity>
+                    
                     <View style={styles.row}>
                         <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, }}>Tray Name:</Text>
                         <TouchableOpacity
@@ -507,14 +527,14 @@ const ListPage = () => {
                             style={{width: width * 0.64, height: width * 0.08, padding: width * 0.01, borderRadius: 5, backgroundColor: "#ededed"}}
                             placeholder={"Enter New Tray Name..."}
                             value={currTray}
-                            onChangeText={(input) => setPrevName(prev => input)}
+                            onChangeText={(input) => setCurrTray(prev => input)}
                             />
                         <TouchableOpacity
                             style={{width: width * 0.2, height: width * 0.08, marginLeft: width * 0.01, backgroundColor: "#d6d6d7", borderRadius: 5, }}
                             onPress={() => {
                                 setNameStyle(styles.nameEdit);
                                 setNameEditStyle(styles.collapsed);
-                                updateTrayName()
+                                updateTrayName();
                             }}
                             >
                             <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.04, }}>Save</Text>
@@ -544,7 +564,7 @@ const ListPage = () => {
                             onPress={() => {
                                 setLocationStyle(styles.nameEdit);
                                 setLocationEditStyle(styles.collapsed);
-                                //updateLocation()
+                                updateTrayLocation();
                             }}
                             >
                             <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.04, }}>Save</Text>
@@ -555,19 +575,28 @@ const ListPage = () => {
                     <View style={[styles.row, {marginBottom: width * 0.02, }]}>
                         <TouchableOpacity
                             style={styleA}
-                            onPress={() => setCurrStatus("Sterile")}
+                            onPress={() => {
+                                setCurrStatus("Sterile");
+                                updateTrayStatus("Sterile");
+                            }}
                             >
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>Sterile</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styleB}
-                            onPress={() => setCurrStatus("?")}
+                            onPress={() => {
+                                setCurrStatus("?");
+                                updateTrayStatus("?");
+                            }}
                             >
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>?</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styleC}
-                            onPress={() => setCurrStatus("Dirty")}
+                            onPress={() => {
+                                setCurrStatus("Dirty");
+                                updateTrayStatus("Dirty");
+                            }}
                             >
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>Dirty</Text>
                         </TouchableOpacity>
@@ -585,9 +614,6 @@ const ListPage = () => {
         fontWeight: "bold",
         fontSize: width * 0.06,
         flexDirection: "row",
-    },
-    locationEdit: {
-        
     },
     container: {
         backgroundColor: '#FFFFFF',
@@ -671,8 +697,6 @@ const ListPage = () => {
     },
     cell: {
         flexDirection: "row",
-        //borderLeftWidth: width * 0.002,
-        //borderBottomWidth: width * 0.002,
         width: width * 0.477,
         minHeight: width * 0.11,
         padding: width * 0.01,

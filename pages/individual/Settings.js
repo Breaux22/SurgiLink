@@ -331,9 +331,9 @@ function SettingsPage () {
       return response;
     }
 
-    async function updateTray (prevName, index) {
+    async function updateTray (tray, index) {
       const caseData = {
-        prevName: prevName,
+        trayId: tray.id,
         newName: trayUpdate,
         userId: myMemory.userInfo.id,
       }
@@ -740,7 +740,7 @@ function SettingsPage () {
                       style={styles.addButton}
                       onPress={() => {
                         hideEdits(setTrayChecklist, 0);
-                        updateTray(tray.trayName, index)
+                        updateTray(tray, index)
                       }}
                       >
                       <Text allowFontScaling={false} style={styles.addButtonText}>Save</Text>

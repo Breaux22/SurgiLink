@@ -222,7 +222,7 @@ function CasePage () {
 
     async function updateTrayStatus (tray) {
         const data = {
-            trayName: tray.trayName,
+            trayId: tray.id,
             trayStatus: tray.trayStatus,
             userId: myMemory.userInfo.id,
         }
@@ -240,7 +240,7 @@ function CasePage () {
 
     async function updateTrayLocation (tray) {
         const data = {
-            trayName: tray.trayName,
+            trayId: tray.id,
             location: tray.location,
             userId: myMemory.userInfo.id,
         }
@@ -257,9 +257,8 @@ function CasePage () {
     }
 
     async function removeTrayFromCase (tray) {
-        const obj = trayList.filter(item => item.trayName == tray.trayName);
         const data = {
-            trayId: obj[0].id,
+            trayId: tray.id,
             caseId: caseId,
         }
         const headers = {
