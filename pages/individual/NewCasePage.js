@@ -95,7 +95,6 @@ const CasePage = () => {
             const newArr = myTrays.filter((item, i) => item.trayName == data.trayName);
             const tempArr = [...trayList];
             tempArr[index] = newArr[0];
-            console.log("TA@: ", tempArr);
             setTrayList(prev => tempArr);
         } else {
             const tempArr = [...trayList];

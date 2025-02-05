@@ -75,7 +75,7 @@ const ListPage = () => {
 
     async function openMenu() {
         setOpenStyle(styles.collapsed);
-        setCloseStyle(styles.icon3);
+        setCloseStyle(styles.closeIcon);
         setMenuStyle(styles.menu);
         setBackBlur(styles.backBlur);
     }
@@ -141,7 +141,7 @@ const ListPage = () => {
       const month = date.toLocaleString('en-US', { month: 'short' });
       const day = String(date.getDate()).padStart(2, '0'); // Ensures two digits
       const year = date.getFullYear();
-      return `${month}, ${day} ${year}`;
+      return `${month} ${day},  ${year}`;
     }
 
     function convertTo12HourTime(time24) {
@@ -224,6 +224,14 @@ const ListPage = () => {
                     <TouchableOpacity
                       style={styles.option}
                       onPress={() => {
+                        closeMenu();
+                      }}
+                      >
+                        <Text allowFontScaling={false} style={styles.optionText}>Case List</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.option}
+                      onPress={() => {
                         navigation.reset({
                           index: 0,
                           routes: [{ name: "List Trays", params: { month: month, year: year } }],
@@ -258,8 +266,11 @@ const ListPage = () => {
                 </View>
                 <View style={backBlur}></View>
             </View>
-            <Text allowFontScaling={false} style={styles.monthYear}>{convertMonthToString(month)}, {year}</Text>
-            <View style={styles.row}>
+            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.955, borderTopLeftRadius: 5, borderTopRightRadius: 5, marginTop: width * 0.025, marginLeft: width * 0.025}]}>
+                <View>
+                    <Text allowFontScaling={false} style={styles.monthYear}>{convertMonthToString(month)}</Text>
+                    <Text allowFontScaling={false} style={styles.monthYear}>{year}</Text>
+                </View>
                 <TouchableOpacity 
                     style={styles.arrow}
                     onPress={() => {
@@ -304,23 +315,22 @@ const ListPage = () => {
                                 });
                             }}
                         >
-                            <View style={cellColor(index)}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{formatDate(myCase.dateString)}</Text>
                                 <Text allowFontScaling={false} style={styles.cellText}>{convertTo12HourTime(myCase.dateString.slice(11,16))}</Text>
                             </View>
-                            <View style={cellColor(index)}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.dr}</Text>
                             </View>
-                            <View style={cellColor(index)}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.hosp}</Text>
                             </View>
-                            <View style={cellColor(index)}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.proctype}</Text>
                             </View>
                         </TouchableOpacity>
                     ))}
                 </View>
-                <View style={{height: width * 0.2}} />
             </ScrollView>
         </SafeAreaView>
         
@@ -354,24 +364,26 @@ const ListPage = () => {
           marginLeft: width * 0.035
       },
       monthYear: {
-          fontSize: width * 0.06,
-          width: width * 0.56,
-          marginLeft: width * 0.02,
-          marginTop: width * 0.01,
+          color: "#4fd697",
+          fontWeight: "bold",
+          fontSize: width * 0.07,
+          marginLeft: width * 0.025,
+          width: width * 0.485, 
       },
       arrow: {
-          backgroundColor: "rgba(0, 122, 255, 0.8)",
+          backgroundColor: "rgba(0, 122, 255, 0.9)",
           width: width * 0.2,
           height: width * 0.1,
           borderRadius: 5,
-          margin: width * 0.025,
+          marginTop: width * 0.025
       },
       arrow2: {
-          backgroundColor: "rgba(0, 122, 255, 0.8)",
+          backgroundColor: "rgba(0, 122, 255, 0.9)",
           width: width * 0.2,
           height: width * 0.1,
           borderRadius: 5,
           marginTop: width * 0.025,
+          marginLeft: width * 0.025,
       },
       arrowIcon: {
           width: width * 0.06,
@@ -387,7 +399,6 @@ const ListPage = () => {
       },
       grid: {
           width: width * 0.985,
-          marginBottom: width * 0.33,
       },
       columns: {
           flexDirection: 'row',
@@ -397,7 +408,8 @@ const ListPage = () => {
       },
       columnText: {
           color: "#ffffff",
-          fontSize: width * 0.04
+          fontSize: width * 0.04,
+          fontWeight: "bold",
       },
       cell: {
           borderLeftWidth: width * 0.002,
@@ -593,6 +605,11 @@ const ListPage = () => {
             width: width * 0.1,
             height: width * 0.1,
             marginLeft: width * 0.02,
+      },
+      closeIcon: {
+          width: width * 0.1,
+          height: width * 0.1,
+          marginLeft: - width * 0.18,
       },
       option: {
             width: width * 0.4,

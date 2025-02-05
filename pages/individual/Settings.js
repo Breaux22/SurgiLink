@@ -462,6 +462,14 @@ function SettingsPage () {
                 >
                   <Text allowFontScaling={false} style={styles.optionText}>Tray List</Text>
               </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => {
+                closeMenu();
+              }}
+              >
+                <Text allowFontScaling={false} style={styles.optionText}>Settings</Text>
+            </TouchableOpacity>
               <TouchableOpacity
                 style={styles.option}
                 onPress={() => {
@@ -732,7 +740,6 @@ function SettingsPage () {
                       style={styles.addButton}
                       onPress={() => {
                         hideEdits(setTrayChecklist, 0);
-                        console.log(tray.trayName == trayUpdate)
                         updateTray(tray.trayName, index)
                       }}
                       >

@@ -131,7 +131,6 @@ const MonthlyViewPage = () => {
     }
 
     async function getCases (year, months) {
-        console.log("Y: ", year, "M: ", months)
         const data = {
             surgYear: year, 
             months: months,
@@ -148,7 +147,6 @@ const MonthlyViewPage = () => {
         const response = await fetch(url, headers)
             .then(response => response.json())
             .then(data => {return data})
-        console.log(response);
         setMonthlyCaseData(prev => response);
     }
 
@@ -400,6 +398,14 @@ const MonthlyViewPage = () => {
             </View>
             <View style={styles.row}>
                 <View style={menuStyle}>
+                    <TouchableOpacity
+                      style={styles.option}
+                      onPress={() => {
+                        closeMenu();
+                      }}
+                      >
+                        <Text allowFontScaling={false} style={styles.optionText}>Monthly View</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.option}
                       onPress={() => {

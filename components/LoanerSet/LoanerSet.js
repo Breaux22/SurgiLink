@@ -22,14 +22,14 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   };
 
   const sendMessage = (myAction='', one, two, three) => {
-    sendDataToParent({myAction: myAction, trayId: props.id, trayName: one, location: two, trayStatus: three}, index);
+    sendDataToParent({myAction: myAction, loaner: true, id: props.id, trayName: one, location: two, trayStatus: three}, index);
   };
 
   const updateLocation = (newLoc) => {
     sendMessage("updateLoanerLocation", trayName, newLoc, trayStatus)
   }
 
-  const debouncedInputChange = useCallback(_.debounce(updateLocation, 1000), []);
+  const debouncedInputChange = useCallback(_.debounce(updateLocation, 250), []);
 
   // useEffect to watch for changes in inputValue
   useEffect(() => {
@@ -46,7 +46,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     sendMessage("updateLoanerName", newName, location, trayStatus)
   }
 
-  const debouncedInputChange2 = useCallback(_.debounce(updateName, 1000), []);
+  const debouncedInputChange2 = useCallback(_.debounce(updateName, 250), []);
 
   // useEffect to watch for changes in inputValue
   useEffect(() => {
@@ -87,7 +87,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     <View style={styles.container2}>
       <View style={styles.row}>
         <Text  allowFontScaling={false}  style={styles.title}>Tray #{index+1}</Text>
-        <Text allowFontscaling={false} style={{backgroundColor: "rgba(0, 122, 255, 0.8)", color: "#fff", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.2,  }}>LOANER</Text>
+        <Text allowFontscaling={false} style={{backgroundColor: "#f08a0e", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.2,  }}>LOANER</Text>
         <TouchableOpacity 
           style={{marginTop: width * 0.015, marginLeft: width * 0.435, }}
           onPress={() => {

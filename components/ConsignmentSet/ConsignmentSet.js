@@ -22,7 +22,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   };
 
   const sendMessage = (myAction='', one, two, three) => {
-    sendDataToParent({myAction: myAction, trayName: one, location: two, trayStatus: three}, index);
+    sendDataToParent({myAction: myAction, id: props.id, loaner: false, trayName: one, location: two, trayStatus: three}, index);
   };
 
   const updateLocation = (newLoc) => {
@@ -70,7 +70,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     <View style={styles.container2}>
       <View style={styles.row}>
         <Text  allowFontScaling={false}  style={styles.title}>Tray #{index+1}</Text>
-        <Text allowFontscaling={false} style={{backgroundColor: "#99f0b0", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.35,  }}>CONSIGNMENT</Text>
+        <Text allowFontscaling={false} style={{backgroundColor: "rgba(0, 122, 255, 0.4)", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.35,  }}>CONSIGNMENT</Text>
         <TouchableOpacity 
           style={{marginTop: width * 0.015, marginLeft: width * 0.28, }}
           onPress={() => {

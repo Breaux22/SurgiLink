@@ -426,6 +426,14 @@ const WeeklyViewPage = () => {
                     <TouchableOpacity
                       style={styles.option}
                       onPress={() => {
+                        closeMenu();
+                      }}
+                      >
+                        <Text allowFontScaling={false} style={styles.optionText}>Weekly View</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.option}
+                      onPress={() => {
                         navigation.reset({
                             index: 0,
                             routes: [{ 
