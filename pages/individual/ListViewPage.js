@@ -13,6 +13,10 @@ import { useMemory } from '../../MemoryContext';
 
 const { width, height } = Dimensions.get('window');
 
+
+// TODO:
+// Make sure preselected filters apply when changing month
+
 const ListPage = () => {
     const route = useRoute();
     const navigation = useNavigation();
@@ -22,8 +26,21 @@ const ListPage = () => {
     const [month, setMonth] = useState(route.params?.month || new Date().getMonth());
     const [year, setYear] = useState(route.params?.year || new Date().getFullYear());
     const [cases, setCases] = useState([]);
+    const [filteredCases, setFilteredCases] = useState([]);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const { myMemory, setMyMemory } = useMemory();
+    const [surgeons, setSurgeons] = useState([]);
+    const [facilities, setFacilities] = useState([]);
+    const [lButText, setLButText] = useState('None');
+    const [rButText, setRButText] = useState('None');
+    // left button stays visible
+    const [rButStyle, setRButStyle] = useState(styles.collapsed);
+    const [lBoxStyle, setLBoxStyle] = useState(styles.collapsed);
+    const [rBoxStyle, setRBoxStyle] = useState(styles.collapsed);
+    // left box data is static
+    const [rBoxData, setRBoxData] = useState([]);
+    const [rBoxStyles, setRBoxStyles] = useState([]);
+    const [filterBy, setFilterBy] = useState([]);
 
     async function saveData (userInfo) {
         setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
@@ -70,6 +87,42 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/logout';
         const response = await fetch(url, headers)
+        return
+    }
+
+    async function getSurgeons () {
+        const data = {
+            userId: myMemory.userInfo.id,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json'
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/getSurgeons';
+        const response = await fetch(url, headers)
+        .then(response => response.json())
+        .then(data => setSurgeons(prev => data))
+        return
+    }
+
+    async function getFacilities () {
+        const data = {
+            userId: myMemory.userInfo.id,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json'
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/getFacilities';
+        const response = await fetch(url, headers)
+            .then(response => response.json())
+            .then(data => setFacilities(prev => data))
         return
     }
 
@@ -159,7 +212,111 @@ const ListPage = () => {
         }
     }
 
+    function fillRightBoxData (choice) {
+        if (choice == 'None') {
+            // set filtered cases to all cases
+            // set left button text to none
+            // hide left box
+            // hide right button
+            // hide right box
+            // [DONE]
+            setFilteredCases(prev => cases);
+            setLButText(prev => 'None');
+            setLBoxStyle(prev => styles.collapsed);
+            setRButStyle(prev => styles.collapsed);
+            setRBoxStyle(prev => styles.collapsed);
+        } else if (choice == 'Surgeons') {
+            // set filtered cases to all cases (assume coming from a different filter)
+            // set filterBy to []
+            // set left button text to surgeons
+            // hide left box
+            // show right button
+            // set right button text to none selected
+            // show right box
+            // set right box data to surgeons (as it comes from the server)
+            // make rBoxStyles
+            // [DONE]
+            setFilteredCases(prev => cases);
+            setFilterBy(prev => []);
+            setLButText(prev => 'Surgeons');
+            setLBoxStyle(prev => styles.collapsed);
+            setRButStyle(prev => styles.rButton);
+            setRButText(prev => 'None');
+            setRBoxStyle(prev => styles.rBox);
+            setRBoxData(prev => surgeons);
+            let tempArr = [];
+            surgeons.map(() => (tempArr.push(styles.buttonLight)));
+            setRBoxStyles(prev => tempArr);
+        } else if (choice == 'Facilities') {
+            // set filtered cases to all cases (assume coming from a different filter)
+            // set filterBy to []
+            // set left button text to facilities
+            // hide left box
+            // show right button
+            // set right button text to none selected
+            // show right box
+            // set right box data to facilities (as it comes from the server)
+            // make rBoxStyles
+            // [DONE]
+            setFilteredCases(prev => cases);
+            setFilterBy(prev => []);
+            setLButText(prev => 'Facilities');
+            setLBoxStyle(prev => styles.collapsed);
+            setRButStyle(prev => styles.rButton);
+            setRButText(prev => 'None');
+            setRBoxStyle(prev => styles.rBox);
+            setRBoxData(prev => facilities);
+            let tempArr = [];
+            facilities.map((item) => tempArr.push(styles.buttonLight));
+            setRBoxStyles(prev => tempArr);
+        }
+        return;
+    }
+
+    function myFilter () {
+        if (lButText == 'Surgeons') {
+            let tempArr = [];
+            for (const value of filterBy) {
+                cases.map((item, index) => {
+                    if (item.dr == value.surgeonName) {
+                        tempArr.push(item);
+                    }
+                })
+            }
+            setFilteredCases(prev => tempArr);
+        } else if (lButText == 'Facilities') {
+            let tempArr = [];
+            for (const value of filterBy) {
+                cases.map((item, index) => {
+                    if (item.hosp == value.facilityName) {
+                        tempArr.push(item);
+                    }
+                })
+            }
+            setFilteredCases(prev => tempArr);
+        }
+    }
+
     useEffect(() => {
+        if (filterBy.length > 0) {
+            // update filteredCases
+            setRButText(filterBy.length);
+            myFilter();
+        } else {
+            setFilteredCases(prev => cases);
+            setRButText('None');
+        }
+    }, [filterBy])
+
+    useEffect(() => {
+        if (cases.length > 0) {
+            setFilteredCases(prev => cases);
+        }
+    }, [cases])
+
+    useEffect(() => {
+        getSurgeons();
+        getFacilities();
         (async () => {
             var caseArray = await getCases(year || new Date().getFullYear(), [month] || [new Date().getMonth()]);
             caseArray = await caseArray.sort((a,b) => new Date(a.dateString) - new Date(b.dateString));
@@ -288,6 +445,108 @@ const ListPage = () => {
                     <Image source={require('../../assets/icons/right-arrow.png')} style={styles.arrowIcon2}/>
                 </TouchableOpacity>
             </View>
+            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.955, height: width * 0.1, marginLeft: width * 0.025, }]}>
+                <TouchableOpacity
+                    style={{width: width * 0.315, height: width * 0.08, backgroundColor: "#ededed", marginLeft: width * 0.02, borderRadius: 5, }}
+                    onPress={() => {
+                        // open or close left box [DONE]
+                        // set filterBy to []
+                        setFilterBy(prev => []);
+                        if (lBoxStyle == styles.collapsed) {
+                            setLBoxStyle(prev => styles.lBox);
+                            setRBoxStyle(prev => styles.collapsed);
+                        } else {
+                            setLBoxStyle(prev => styles.collapsed);
+                        }
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{marginTop: width * 0.018, textAlign: "center", }}>filter: by {lButText}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={rButStyle}
+                    onPress={() => {
+                        // open or close right box [DONE]
+                        if (rBoxStyle == styles.collapsed) {
+                            setRBoxStyle(prev => styles.rBox);
+                            setLBoxStyle(prev => styles.collapsed);
+                        } else {
+                            setRBoxStyle(prev => styles.collapsed);
+                        }
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{textAlign: "center", marginTop: width * 0.018}}>{rButText} Selected</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={lBoxStyle}>
+                <TouchableOpacity
+                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    onPress={() => {
+                        // set left box to none [DONE]
+                        fillRightBoxData('None');
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>None</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    onPress={() => {
+                        // set left box to surgeons [DONE]
+                        fillRightBoxData('Surgeons');
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>Surgeons</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    onPress={() => {
+                        // set left box to facilities [DONE]
+                        fillRightBoxData('Facilities');
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>Facilities</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={rBoxStyle}>
+                {rBoxData.map((item, index) => (
+                    <TouchableOpacity
+                        key={item.surgeonName || item.facilityName}
+                        onPress={() => {
+                            if (rBoxStyles[index] == styles.buttonLight) {
+                                // select filter button
+                                // update
+                                // add to filterBy
+                                // update right button text
+                                let tempArr = [...rBoxStyles];
+                                tempArr[index] = styles.buttonDark;
+                                setRBoxStyles(prev => tempArr);
+                                setFilterBy(prev => [...prev, rBoxData[index]]) // filterBy has surgeon/facility object, not just the name
+                            } else {
+                                // deselect filter button
+                                // remove from filterBy
+                                // update right button text
+                                let tempArr = [...rBoxStyles];
+                                tempArr[index] = styles.buttonLight;
+                                setRBoxStyles(prev => tempArr);
+                                setFilterBy(prevFilterBy => {
+                                    let newFilterBy = [];
+                                    for (const value of prevFilterBy) {
+                                        if (lButText == 'Surgeons' && value.surgeonName == rBoxData[index].surgeonName) {
+                                            continue;
+                                        } else if (lButText == 'Facilities' && value.facilityName == rBoxData[index].facilityName) {
+                                            continue;
+                                        } else {
+                                            newFilterBy.push(value);
+                                        }
+                                    }
+                                    return newFilterBy;
+                                })
+                            }
+                        }}
+                        >
+                        <Text allowFontScaling={false} style={rBoxStyles[index]}>{lButText == 'Surgeons' ? item.surgeonName : item.facilityName}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
             <View style={styles.columns}>
                 <View style={styles.cell}>
                     <Text allowFontScaling={false} style={styles.columnText}>Date</Text>
@@ -304,7 +563,7 @@ const ListPage = () => {
             </View>
             <ScrollView style={styles.grid}>
                 <View style={{width: width * 0.955, marginLeft: width * 0.025, borderRightWidth: width * 0.002, borderTopWidth: width * 0.002,}}>
-                    {cases.map((myCase, index) => (
+                    {filteredCases.map((myCase, index) => (
                         <TouchableOpacity 
                             key={myCase.surgdate + index} 
                             style={styles.row}
@@ -338,6 +597,55 @@ const ListPage = () => {
   };
 
   const styles = StyleSheet.create({
+      rButton: {
+          width: width * 0.315,
+          height: width * 0.08,
+          marginLeft: width * 0.02,
+          backgroundColor: "#ededed",
+          borderRadius: 5,
+      },
+      buttonLight: {
+          width: width * 0.45,
+          height: width * 0.08,
+          borderRadius: 5,
+          borderWidth: width * 0.003,
+          paddingTop: width * 0.011,
+          marginTop: width * 0.01,
+          textAlign: 'center',
+      },
+      buttonDark: {
+        width: width * 0.45,
+        height: width * 0.08,
+        borderRadius: 5,
+        borderWidth: width * 0.003,
+        paddingTop: width * 0.011,
+        marginTop: width * 0.01,
+        backgroundColor: "#333436",
+        color: "#fff",
+        textAlign: "center",
+      },
+      lBox: {
+          position: "absolute",
+          width: width * 0.5,
+          height: width * 0.33,
+          backgroundColor: "#ededed",
+          marginTop: width * 0.52,
+          marginLeft: width * 0.04,
+          borderRadius: 5,
+          borderWidth: width * 0.003,
+          zIndex: 1
+      },
+      rBox: {
+          position: "absolute",
+          width: width * 0.5,
+          padding: width * 0.02,
+          backgroundColor: "#ededed",
+          marginTop: width * 0.52,
+          marginLeft: width * 0.38,
+          borderRadius: 5,
+          borderWidth: width * 0.003,
+          zIndex: 1
+      },
       container: {
           backgroundColor: '#FFFFFF',
           height: height,

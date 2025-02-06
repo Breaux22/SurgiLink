@@ -310,7 +310,7 @@ const ListPage = () => {
                                     key={item + index}
                                     style={{backgroundColor: item.color, width: width * 0.85, minHeight: width * 0.3, borderRadius: 5, borderWidth: width * 0.002, marginBottom: width * 0.02, paddingLeft: width * 0.02, paddingBottom: width * 0.01, }}
                                     >
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>{formatTo12HourTime(item.surgdate)}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>In {daysFormat(item.surgdate)} days @ {formatTo12HourTime(item.surgdate)}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                                     <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>
@@ -491,7 +491,7 @@ const ListPage = () => {
                     <Text allowFontScaling={false} style={styles.columnText}>Tray</Text>
                 </View>
                 <View style={[styles.cell, {borderLeftWidth: width * 0.003, borderColor: "#d6d6d6", }]}>
-                    <Text allowFontScaling={false} style={styles.columnText}>Current Location & Status</Text>
+                    <Text allowFontScaling={false} style={styles.columnText}>Current Location</Text>
                 </View>
             </View>
             <ScrollView style={{maxHeight: height * 0.74, }}>
