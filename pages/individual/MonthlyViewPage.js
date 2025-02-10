@@ -160,7 +160,7 @@ const MonthlyViewPage = () => {
             <View style={{height: width * 0.2, overflow: "hidden"}}>
                 {caseList.map((item, index) => (
                     <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
-                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
+                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName.slice(0,10) : "Surgeon?"}</Text>
                     </View>
                 ))}
             </View>

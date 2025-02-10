@@ -4,7 +4,6 @@ import { StyleSheet, Text, SafeAreaView, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MemoryProvider } from './MemoryContext';
-import iDaily from './pages/individual/DailyViewPage';
 import iWeekly from './pages/individual/WeeklyViewPage';
 import iMonthly from './pages/individual/MonthlyViewPage';
 import iCase from './pages/individual/CasePage';
@@ -54,11 +53,6 @@ export default function App() {
             }} />
           <Stack.Screen name="Weekly View" 
             component={iWeekly}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Daily View" 
-            component={iDaily}            
             options={{
               headerShown: false,
             }} />

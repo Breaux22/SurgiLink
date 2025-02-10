@@ -105,7 +105,8 @@ const ListPage = () => {
         const url = 'https://surgiflow.replit.app/getSurgeons';
         const response = await fetch(url, headers)
         .then(response => response.json())
-        .then(data => setSurgeons(prev => data))
+        .then(data => {return data})
+        setSurgeons(prev => response);
         return
     }
 
@@ -191,7 +192,7 @@ const ListPage = () => {
             })
         const tempArr = [...response];
         tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
-        return tempArr;
+        setCases(tempArr);
     }
 
     function formatDate(dateInput) {
@@ -283,7 +284,7 @@ const ListPage = () => {
             let tempArr = [];
             for (const value of filterBy) {
                 cases.map((item, index) => {
-                    if (item.dr == value.surgeonName) {
+                    if (item.dr == value.id) {
                         tempArr.push(item);
                     }
                 })
@@ -320,6 +321,8 @@ const ListPage = () => {
             } else {
                 setFilteredCases(prev => cases);
             }
+        } else {
+            setFilteredCases([]);
         }
     }, [cases])
 
@@ -588,7 +591,7 @@ const ListPage = () => {
                                 <Text allowFontScaling={false} style={styles.cellText}>{convertTo12HourTime(myCase.dateString.slice(11,16))}</Text>
                             </View>
                             <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
-                                <Text allowFontScaling={false} style={styles.cellText}>{myCase.dr}</Text>
+                                <Text allowFontScaling={false} style={styles.cellText}>{myCase.surgeonName}</Text>
                             </View>
                             <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.hosp}</Text>

@@ -20,7 +20,8 @@ function CasePage () {
     const navigation = useNavigation();
     const myCase = route.params?.caseProp;
     const backTo = route.params?.backTo;
-    const caseId = myCase['id'];
+    console.log(myCase)
+    const caseId = myCase['caseId'] || myCase['id'];
     const [surgdate, setSurgdate] = useState(new Date()); // surgdate
     const [surgtime, setSurgtime] = useState(new Date()); // time
     const [proctype, setProctype] = useState(); // procedure type
@@ -38,7 +39,7 @@ function CasePage () {
     const [sdHeight, setSDHeight] = useState(32);
     const [mstStyle, setMstStyle] = useState(styles.collapsed);
     const [surgeonStyle, setSurgeonStyle] = useState(styles.collapsed);
-    const [surgeonText, setSurgeonText] = useState("Choose Surgeon..."); // Surgeon Name
+    const [surgeonText, setSurgeonText] = useState(myCase.surgeonName || "Choose Surgeon..."); // Surgeon Name
     const [surgeonList, setSurgeonList] = useState([]);
     const [mftStyle, setMftStyle] = useState(styles.collapsed);
     const [facilityStyle, setFacilityStyle] = useState(styles.collapsed);
@@ -305,13 +306,6 @@ function CasePage () {
             .then(response => response.json())
             .then(data => {return data})
         setSurgeonList(response);
-        setSurgeonText(prev => {
-            for(const surg of response){
-                if (surg.id == myCase.dr) {
-                    return surg.surgeonName
-                }
-            }    
-        })
     }
 
     async function getFacilities() {

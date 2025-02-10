@@ -36,7 +36,6 @@ const ListPage = () => {
     const [nameEditStyle, setNameEditStyle] = useState(styles.collapsed);
     const [locationStyle, setLocationStyle] = useState(styles.nameEdit);
     const [locationEditStyle, setLocationEditStyle] = useState(styles.collapsed);
-    const [currStatus, setCurrStatus] = useState('Dirty');
     const [styleA, setStyleA] = useState(styles.prevG);
     const [styleB, setStyleB] = useState(styles.prevY);
     const [styleC, setStyleC] = useState(styles.prevR);
@@ -172,9 +171,10 @@ const ListPage = () => {
         const url = 'https://surgiflow.replit.app/getTrayUses';
         const response = await fetch(url, headers)
             .then(response => response.json())
-            .then(data => {
-                setFutureUses(prev => data)
-            })
+            .then(data => {return data})
+        const tempArr = [...response];
+        tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
+        setFutureUses(tempArr);
         return;
     }
 
@@ -193,27 +193,6 @@ const ListPage = () => {
             'body': JSON.stringify(data)
         }
         const url = 'https://surgiflow.replit.app/updateTrayLocation';
-        const response = await fetch(url, headers);
-        getTrays();
-        getTrayUses();
-        return;
-    }
-
-    async function updateTrayStatus (myStatus) {
-        const data = {
-            trayId: currTrayObj.id,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
-            trayStatus: myStatus
-        }
-        const headers = {
-            'method': 'POST',
-            'headers': {
-                'content-type': 'application/json'
-            },
-            'body': JSON.stringify(data)
-        }
-        const url = 'https://surgiflow.replit.app/updateTrayStatus';
         const response = await fetch(url, headers);
         getTrays();
         getTrayUses();
@@ -288,7 +267,7 @@ const ListPage = () => {
 
     function cellColor (index) {
         if (index % 2 == 1) {
-            return "rgba(0, 122, 255, 0.15)";
+            return "#d6d6d7";
         } else {
             return "#fff";
         }
@@ -305,7 +284,7 @@ const ListPage = () => {
             setCurrTray(prev => myTray.trayName);
             setCurrTrayObj(myTray);
             setLocation(prev => myTray.location);
-            setCurrStatus(prev => myTray.trayStatus);
+            console.log("UA: ", usesArr);
             if (usesArr.length > 0) {
                 setUsesComp(prev => 
                     <View>
@@ -314,9 +293,24 @@ const ListPage = () => {
                                 <TouchableOpacity
                                     key={item + index}
                                     style={{backgroundColor: item.color, width: width * 0.85, minHeight: width * 0.3, borderRadius: 5, borderWidth: width * 0.002, marginBottom: width * 0.02, paddingLeft: width * 0.02, paddingBottom: width * 0.01, }}
+                                    onPress={() => {
+                                        navigation.reset({
+                                            index: 0,
+                                            routes: [{
+                                                name: "Case Info",
+                                                params: {
+                                                    caseProp: item,
+                                                    backTo: {
+                                                        name: "List Trays",
+                                                        params: {month: month, year: year}
+                                                    }
+                                                }
+                                            }]
+                                        })
+                                    }}
                                     >
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>In {daysFormat(item.surgdate)} days @ {formatTo12HourTime(item.surgdate)}</Text>
-                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>In {daysFormat(item.surgdate)} days @ {formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
+                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
                                     <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>
                                     <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.notes !== '' ? item.notes : "~"}</Text>
@@ -355,22 +349,6 @@ const ListPage = () => {
         return;
     }
 
-    function getButtonColor () {
-        if (currStatus == "Sterile") {
-            setStyleA(styles.prevGB);
-            setStyleB(styles.prevY);
-            setStyleC(styles.prevR);
-        } else if (currStatus == "?") {
-            setStyleA(styles.prevG);
-            setStyleB(styles.prevYB);
-            setStyleC(styles.prevR);
-        } else if (currStatus == "Dirty") {
-            setStyleA(styles.prevG);
-            setStyleB(styles.prevY);
-            setStyleC(styles.prevRB);
-        }
-    }
-
     useEffect(() => {
         getTrays();
         getTrayUses();
@@ -381,11 +359,6 @@ const ListPage = () => {
             fillTraysComp();
         }
     }, [trays])
-
-    useEffect(() => {
-        getButtonColor();
-        //updateTrayStatus();
-    }, [currStatus])
 
     return (
         <SafeAreaView style={styles.container}>
@@ -576,37 +549,7 @@ const ListPage = () => {
                         </TouchableOpacity>
                     </View>
                     <Text allowFontScaling={false} style={locationStyle}>{location}</Text>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, }}>Tray Status:</Text>
-                    <View style={[styles.row, {marginBottom: width * 0.02, }]}>
-                        <TouchableOpacity
-                            style={styleA}
-                            onPress={() => {
-                                setCurrStatus("Sterile");
-                                updateTrayStatus("Sterile");
-                            }}
-                            >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>Sterile</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styleB}
-                            onPress={() => {
-                                setCurrStatus("?");
-                                updateTrayStatus("?");
-                            }}
-                            >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>?</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styleC}
-                            onPress={() => {
-                                setCurrStatus("Dirty");
-                                updateTrayStatus("Dirty");
-                            }}
-                            >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, }}>Dirty</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginBottom: width * 0.02, }}>Upcoming Cases:</Text>
+                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, marginBottom: width * 0.02, }}>Upcoming Cases:</Text>
                     {usesComp}
                 </View>
             </View>
