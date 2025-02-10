@@ -138,6 +138,7 @@ const ListPage = () => {
     async function getTrays () {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -159,6 +160,7 @@ const ListPage = () => {
     async function getTrayUses () {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -180,6 +182,7 @@ const ListPage = () => {
         const data = {
             trayId: currTrayObj.id,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
             location: location
         }
         const headers = {
@@ -200,6 +203,7 @@ const ListPage = () => {
         const data = {
             trayId: currTrayObj.id,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
             trayStatus: myStatus
         }
         const headers = {
@@ -221,6 +225,7 @@ const ListPage = () => {
             trayId: currTrayObj.id,
             newName: currTray,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

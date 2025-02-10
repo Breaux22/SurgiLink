@@ -93,6 +93,7 @@ const ListPage = () => {
     async function getSurgeons () {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -111,6 +112,7 @@ const ListPage = () => {
     async function getFacilities () {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -172,6 +174,7 @@ const ListPage = () => {
             surgYear: year, 
             months: month,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -186,7 +189,9 @@ const ListPage = () => {
             .then(data => {
                 setCases(prev => data);
             })
-        return response;
+        const tempArr = [...response];
+        tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
+        return tempArr;
     }
 
     function formatDate(dateInput) {
@@ -310,7 +315,11 @@ const ListPage = () => {
 
     useEffect(() => {
         if (cases.length > 0) {
-            setFilteredCases(prev => cases);
+            if (filterBy.length > 0) {
+                myFilter();
+            } else {
+                setFilteredCases(prev => cases);
+            }
         }
     }, [cases])
 

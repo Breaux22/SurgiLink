@@ -16,39 +16,45 @@ const { width, height } = Dimensions.get('window');
 
 const CasePage = () => {
     const route = useRoute();
+    const navigation = useNavigation();
+    const myCase = route.params?.caseProp;
     const backTo = route.params?.backTo;
-    const [surgdate, setSurgdate] = useState(new Date());
-    const [surgdateText, setSDT] = useState('Select Date...'); // date
-    const [sdStyle, setSdstyle] = useState(styles.collapsed);
+    const [surgdate, setSurgdate] = useState(new Date()); // surgdate
     const [surgtime, setSurgtime] = useState(new Date()); // time
-    const [proctype, setProctype] = useState(""); // procedure type
-    const [notes, setNotes] = useState(""); // surgery details
+    const [proctype, setProctype] = useState(); // procedure type
+    const [notes, setNotes] = useState(); // surgery details
     const [trayList, setTrayList] = useState([]); // list of trays for case
     const [myTrays, setMyTrays] = useState([]);
     const [statuses, setStatuses] = useState([]);
     const [loanerStatus, setLoanerStatus] = useState("?"); // status of new tray
-    const [loanerName, setLoanerName] = useState(""); // name of new tray
-    const [loanerLocation, setLoanerLocation] = useState("?");
+    const [loanerName, setLoanerName] = useState("Choose Tray..."); // name of new tray
+    const [loanerLocation, setLoanerLocation] = useState("");
     const [lsStyle, setLsStyle] = useState(styles.collapsed);
     const [loanerStyle, setLoanerStyle] = useState(styles.collapsed);
-    const [timezone, setTimezone] = useState("PST (GMT-8)"); // time zone
+    const [timeZone, setTimeZone] = useState("PST (GMT-8)"); // time zone
     const [tzPickerStyle, setTzPickerStyle] = useState(styles.collapsed);
     const [sdHeight, setSDHeight] = useState(32);
     const [mstStyle, setMstStyle] = useState(styles.collapsed);
     const [surgeonStyle, setSurgeonStyle] = useState(styles.collapsed);
     const [surgeonText, setSurgeonText] = useState("Choose Surgeon..."); // Surgeon Name
     const [surgeonText2, setSurgeonText2] = useState("");
-    const [surgeonList, setSurgeonList] = useState([])
+    const [surgeonList, setSurgeonList] = useState([]);
     const [mftStyle, setMftStyle] = useState(styles.collapsed);
     const [facilityStyle, setFacilityStyle] = useState(styles.collapsed);
-    const [facilityText, setFacilityText] = useState("Choose Facility..."); // Surgeon Name
+    const [facilityText, setFacilityText] = useState("Choose Facility…"); // Surgeon Name
     const [facilityText2, setFacilityText2] = useState("");
     const [facilityList, setFacilityList] = useState([]);
+    const [images, setImages] = useState([]); // array of image data from cloudinary
+    const [loading, setLoading] = useState(styles.collapsed);
+    const [previewStyle, setPreviewStyle] = useState(styles.collapsed);
+    const [previewImage, setPreviewImage] = useState(null); // image data of clicked image from gallery
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [loadBar, setLoadBar] = useState(0);
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
     const [openStyle, setOpenStyle] = useState(styles.icon3);
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
-    const navigation = useNavigation();
+    const [backStyle, setBackStyle] = useState(styles.back);
     const { myMemory, setMyMemory } = useMemory();
 
     async function saveData (userInfo) {
@@ -86,20 +92,20 @@ const CasePage = () => {
             const newArr = trayList.filter((item, i) => i !== index);
             setTrayList(prevArr => newArr);
             removeTrayFromCase(data);
-        } else if (data.myAction == "updateStatus") {
-            updateTrayStatus(data);
-        } else if (data.myAction == "updateLocation") {
-            updateTrayLocation(data);
         } else if (data.myAction == 'chooseTray') {
             // change tray selected
             const newArr = myTrays.filter((item, i) => item.trayName == data.trayName);
             const tempArr = [...trayList];
             tempArr[index] = newArr[0];
             setTrayList(prev => tempArr);
-        } else {
-            const tempArr = [...trayList];
+        } else if (data.myAction == "updateLoanerName") {
+            const tempArr = trayList;
             tempArr[index] = data;
-            setTrayList(prev => tempArr);
+            setTrayList(tempArr);
+        } else {
+            const tempArr = trayList;
+            tempArr[index] = data;
+            setTrayList(tempArr);
         }
     };
 
@@ -121,11 +127,34 @@ const CasePage = () => {
         return
     }
 
+    async function updateLoanerName (tray) {
+        const data = {
+            trayId: tray.trayId,
+            newName: tray.trayName,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers' :{
+                'content-type': 'application/json',
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/updateTrayName';
+        const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok) {console.error("Error updating loaner tray name.")}
+            })
+        return;
+    }
+
     async function updateTrayStatus (tray) {
         const data = {
-            trayName: tray.trayName,
+            trayId: tray.id,
             trayStatus: tray.trayStatus,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -141,9 +170,10 @@ const CasePage = () => {
 
     async function updateTrayLocation (tray) {
         const data = {
-            trayName: tray.trayName,
+            trayId: tray.id,
             location: tray.location,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -158,10 +188,11 @@ const CasePage = () => {
     }
 
     async function removeTrayFromCase (tray) {
-        const obj = trayList.filter(item => item.trayName == tray.trayName);
         const data = {
-            trayId: obj[0].id,
+            trayId: tray.id,
             caseId: caseId,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -178,6 +209,7 @@ const CasePage = () => {
     async function getSurgeons() {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -196,6 +228,7 @@ const CasePage = () => {
     async function getFacilities() {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -214,6 +247,7 @@ const CasePage = () => {
     async function getMyTrays() {
         const data = {
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -231,7 +265,9 @@ const CasePage = () => {
 
     async function getCaseTrayUses () {
         const data = {
-            caseId: caseId
+            caseId: caseId,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -251,6 +287,7 @@ const CasePage = () => {
         const data = {
             surgeonName: surgeonText,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -273,6 +310,7 @@ const CasePage = () => {
         const data = {
             facilityName: facilityText,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -294,6 +332,7 @@ const CasePage = () => {
           const data = {
               trayName: loanerName,
               userId: myMemory.userInfo.id,
+              sessionString: myMemory.userInfo.sessionString,
           }
           const headers = {
               'method': 'POST',
@@ -335,7 +374,7 @@ const CasePage = () => {
             dateString: new Date(surgdate - (1000*60*60*8)),
             surgDate: new Date(surgdate - (1000*60*60*8)),
             surgTime: new Date(surgdate - (1000*60*60*8)),
-            timezone: timezone,
+            timezone: timeZone,
             surgMonth: await getMonthString(new Date(surgdate - (1000*60*60*8)).getMonth()),
             surgYear: new Date(surgdate - (1000*60*60*8)).getFullYear(),
             procType: proctype,
@@ -344,6 +383,7 @@ const CasePage = () => {
             notes: notes,
             trayList: JSON.stringify(trayList),
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -431,11 +471,11 @@ const CasePage = () => {
                             setTzPickerStyle(styles.collapsed);
                         }
                     }}>
-                        <Text  allowFontScaling={false}  style={styles.body}>{timezone}</Text>
+                        <Text  allowFontScaling={false}  style={styles.body}>{timeZone}</Text>
                     </TouchableOpacity>
                 </View>
                 <Picker
-                    selectedValue={timezone}
+                    selectedValue={timeZone}
                     onValueChange={(itemValue/*, itemIndex*/) => {
                         setTimezone(itemValue);
                     }}
@@ -642,19 +682,22 @@ const CasePage = () => {
                         </TouchableOpacity>
                     </View>
                     <View style={styles.row}>
-                        <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: "?", location: "?", loaner: false}]);
-                        }}>
+                        <TouchableOpacity 
+                            style={{width: width * 0.522, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} 
+                            onPress={() => {
+                                setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: '?', location: '', loaner: false}]);
+                            //setLoanerStyle(styles.collapsed);
+                            }}>
                             <View style={styles.row}>
-                                <Text  allowFontScaling={false}  style={styles.title}>Select From List</Text>
+                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Consignment Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.largeButton} onPress={() => {
-                            setTrayList((trayList) => [...trayList, {trayName: "", trayStatus: "?", location: "", loaner: true}]);
+                        <TouchableOpacity style={{width: width * 0.418, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} onPress={() => {
+                            setTrayList((trayList) => [...trayList, {id: null, trayName: "", trayStatus: '?', location: '', loaner: true,}]);
                         }}>
-                            <View style={styles.row}>
-                                <Text  allowFontScaling={false}  style={styles.title}>Type In New Tray</Text>
+                            <View style={[styles.row, {textAlign: "center"}]}>
+                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Loaner Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>

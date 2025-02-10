@@ -125,6 +125,7 @@ function SettingsPage () {
       const caseData = {
         items: items,
         userId: myMemory.userInfo.id,
+        sessionString: myMemory.userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -148,13 +149,28 @@ function SettingsPage () {
     async function addItem (param, item, url, follow) {
       let caseData;
       if (param === 'surgeonName') {
-        caseData = { surgeonName: item, userId: myMemory.userInfo.id };
+        caseData = { 
+          surgeonName: item,
+          userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString, };
       } else if (param === 'facilityName') {
-        caseData = { facilityName: item, userId: myMemory.userInfo.id };
+        caseData = { 
+          facilityName: item, 
+          userId: myMemory.userInfo.id, 
+          sessionString: myMemory.userInfo.sessionString,
+        };
       } else if (param === 'trayName') {
-        caseData = { trayName: item, userId: myMemory.userInfo.id };
+        caseData = {
+          trayName: item,
+          userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
+        };
       } else if (param === 'status') {
-        caseData = { status: item, userId: myMemory.userInfo.id };
+        caseData = {
+          status: item,
+          userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
+        };
       }
       const headers = {
         'method': 'POST',
@@ -186,6 +202,7 @@ function SettingsPage () {
     async function getSurgeons() {
         const data = {
           userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -198,7 +215,7 @@ function SettingsPage () {
         const response = await fetch(url, headers)
             .then(response => response.json())
             .then(data => {return data})
-        var tempArr = response.map((surg) => ({ name: surg.surgeonName, myState: false, editStyle: styles.edit, nameStyle: styles.surgeonText, inputStyle: styles.collapsed }));
+        var tempArr = response.map((surg) => ({ id: surg.id, name: surg.surgeonName, myState: false, editStyle: styles.edit, nameStyle: styles.surgeonText, inputStyle: styles.collapsed }));
         setSurgChecklist(tempArr);
         setSurgeonList(response);
         setDelete1(styles.collapsed);
@@ -207,6 +224,7 @@ function SettingsPage () {
     async function getFacilities() {
         const data = {
           userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -228,6 +246,7 @@ function SettingsPage () {
     async function getTrays() {
         const data = {
           userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -286,6 +305,7 @@ function SettingsPage () {
         prevName: prevName,
         newName: surgUpdate,
         userId: myMemory.userInfo.id,
+        sessionString: myMemory.userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -311,6 +331,7 @@ function SettingsPage () {
         prevName: prevName,
         newName: facilUpdate,
         userId: myMemory.userInfo.id,
+        sessionString: myMemory.userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -336,6 +357,7 @@ function SettingsPage () {
         trayId: tray.id,
         newName: trayUpdate,
         userId: myMemory.userInfo.id,
+        sessionString: myMemory.userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -790,7 +812,8 @@ const styles = StyleSheet.create({
   editBox: {
       borderWidth: width * 0.001,
       width: width * 0.95,
-      maxHeight: width * 0.4,    
+      minHeight: width * 0.4,    
+      maxHeight: width,
       marginLeft: width * 0.025,
       padding: width * 0.02,
       borderRadius: 5,

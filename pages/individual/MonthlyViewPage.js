@@ -135,6 +135,7 @@ const MonthlyViewPage = () => {
             surgYear: year, 
             months: months,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }    
         const headers = {
             'method': 'POST',
@@ -143,11 +144,14 @@ const MonthlyViewPage = () => {
             },
             'body': JSON.stringify(data)
         }
+        //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/getCases';
         const url = 'https://surgiflow.replit.app/getCases';
         const response = await fetch(url, headers)
             .then(response => response.json())
             .then(data => {return data})
-        setMonthlyCaseData(prev => response);
+        const tempArr = [...response];
+        tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
+        setMonthlyCaseData(prev => tempArr);
     }
 
     function generateBlockList (myDate) {
@@ -156,7 +160,7 @@ const MonthlyViewPage = () => {
             <View style={{height: width * 0.2, overflow: "hidden"}}>
                 {caseList.map((item, index) => (
                     <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
-                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
                     </View>
                 ))}
             </View>
@@ -203,7 +207,7 @@ const MonthlyViewPage = () => {
                                 <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName: "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
@@ -235,7 +239,7 @@ const MonthlyViewPage = () => {
                                 <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>

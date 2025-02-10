@@ -139,6 +139,7 @@ const WeeklyViewPage = () => {
             surgYear: weekStart.getFullYear(),
             months: monthArr,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             "method": "POST",
@@ -150,8 +151,9 @@ const WeeklyViewPage = () => {
         const response = await fetch('https://surgiflow.replit.app/getCases', headers)
             .then(response => response.json())
             .then(data => {return data});
-        // do something with the cases response data
-        setCases(prev => response);
+        const tempArr = [... response];
+        tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
+        setCases(prev => tempArr);
     }
 
     function getDayString (myIndex) {
@@ -221,7 +223,7 @@ const WeeklyViewPage = () => {
                                 })
                             }}
                             >
-                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
                             <Text allowFontScaling={false} style={{fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{}}>{item.proctype}</Text>
                         </TouchableOpacity>
@@ -229,7 +231,7 @@ const WeeklyViewPage = () => {
                 }</ScrollView>
             )
         } else if (styleOptions[index] == styles.short) {
-            let caseArr = cases.filter((item) => new Date(item.surgdate).getDate() == myDate.getDate());
+            let caseArr = cases.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate.getDate());
             return (
                 <ScrollView horizontal>{
                     caseArr.map((item, index) => (
@@ -264,7 +266,7 @@ const WeeklyViewPage = () => {
                                 })
                             }}
                             >
-                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, width: width * 0.17, marginLeft: width * 0.01, fontSize: width * 0.03, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, width: width * 0.17, marginLeft: width * 0.01, fontSize: width * 0.03, }}>{formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
                             <Text allowFontScaling={false} style={{fontWeight: "bold", marginLeft: width * 0.01, }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                         </TouchableOpacity>
                     ))
@@ -306,7 +308,7 @@ const WeeklyViewPage = () => {
                                 })
                             }}
                             >
-                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(item.surgdate)}</Text>
+                            <Text allowFontScaling={false} style={{borderBottomWidth: width * 0.003, }}>{formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
                             <Text allowFontScaling={false} style={{fontWeight: "bold", }}>{item.dr !== "Choose Surgeon..." ? item.dr : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{}}>Procedure: {item.proctype !== "" ? item.proctype : "~"}</Text>
                             <Text allowFontScaling={false}>Notes:</Text>

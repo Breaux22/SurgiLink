@@ -17,12 +17,13 @@ export default function CameraPage({ navigation, caseId }) {
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [flash, setFlash] = useState('off');
-  const [image, setImage] = useState();
+  const [image, setImage] = useState(null);
   const [imageB64, setImageB64] = useState();
   const [retakeStyle, setRetakeStyle] = useState(styles.collapsed);
   const [keepStyle, setKeepStyle] = useState(styles.collapsed);
   const [shutterStyle, setShutterStyle] = useState(styles.snap);
   const [optionStyle, setOptionStyle] = useState(styles.row);
+  const [loadingStyle, setLoadingStyle] = useState(false);
   const { myMemory, setMyMemory } = useMemory();
 
   async function saveData (userInfo) {
@@ -57,15 +58,19 @@ export default function CameraPage({ navigation, caseId }) {
       setFlash('on');
     }
   }
-
+  
   async function takeImage() {
     if (cameraRef.current) {
+      setLoadingStyle(true);
       cameraRef.current.takePictureAsync({
         base64: true,
         onPictureSaved: async (picture) => {
           setImage(String(picture.uri));
           setImageB64(picture.base64)
-          const asset = await MediaLibrary.createAssetAsync(picture.uri);
+          setTimeout(() => {
+            setLoadingStyle(false);
+          }, 250)
+          //const asset = await MediaLibrary.createAssetAsync(picture.uri);
         }
       });
       setRetakeStyle(styles.retake);
@@ -96,7 +101,6 @@ export default function CameraPage({ navigation, caseId }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log(response)
 
       setShutterStyle(styles.snap);
       setOptionStyle(styles.row);
@@ -131,6 +135,7 @@ export default function CameraPage({ navigation, caseId }) {
         <TouchableOpacity style={shutterStyle} onPress={takeImage}>
             <Image source={require('../../assets/icons/circle.png')} style={styles.bigIcon} />
         </TouchableOpacity>
+          {loadingStyle == true && <View style={{position: "absolute", width: width, height: height * 0.9, backgroundColor: "#fff"}}><Image source={require('../../assets/icons/loading.gif')} style={{width: width * 0.5, height: width * 0.5, marginLeft: width * 0.25, marginTop: width * 0.5, }}/></View>}
           {image && <Image 
                       source={{ uri: image }} 
                       style={{width: width, height: height * 0.9, resizeMode: 'contain',}} 

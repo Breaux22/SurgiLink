@@ -1,5 +1,5 @@
 import React, { Component, useCallback } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, TextInput, Image, Dimensions } from "react-native";
 import { Picker } from '@react-native-picker/picker';
 import { useMemory } from '../../MemoryContext';
@@ -10,26 +10,28 @@ const { width } = Dimensions.get('window');
 function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   const [location, setLocation] = useState(props.location);
   const [trayName, setTrayName] = useState(props.trayName);
-  const [trayStatus, setTrayStatus] = useState(props.trayStatus);
   const [spStyle, setSpStyle] = useState(styles.collapsed);
   const [setNeeded, setSetNeeded] = useState(props.trayName);
   const [snStyle, setSnStyle] = useState(styles.collapsed);
-  const [removeStyle, setRemoveStyle] = useState(styles.collapsed);
   const { myMemory, setMyMemory } = useMemory();
+  const [checkedIn, setCheckedIn] = useState(props.checkedIn);
+  const [open, setOpen] = useState(props.open);
+  const firstRenderCheckedIn = useRef(true);
+  const firstRenderOpen = useRef(true);
 
   async function saveData (userInfo) {
       setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
   };
 
-  const sendMessage = (myAction='', one, two, three) => {
-    sendDataToParent({myAction: myAction, loaner: true, id: props.id, trayName: one, location: two, trayStatus: three}, index);
-  };
-
   const updateLocation = (newLoc) => {
-    sendMessage("updateLoanerLocation", trayName, newLoc, trayStatus)
+    sendDataToParent({myAction: 'updateLocation', location: newLoc}, index);
   }
 
-  const debouncedInputChange = useCallback(_.debounce(updateLocation, 250), []);
+  const updateName = (newName) => {
+    sendDataToParent({myAction: 'updateLoanerName', newName: newName}, index);
+  }
+
+  const debouncedInputChange = useCallback(_.debounce(updateLocation, 500), []);
 
   // useEffect to watch for changes in inputValue
   useEffect(() => {
@@ -42,11 +44,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     };
   }, [location, debouncedInputChange]);
 
-  const updateName = (newName) => {
-    sendMessage("updateLoanerName", newName, location, trayStatus)
-  }
-
-  const debouncedInputChange2 = useCallback(_.debounce(updateName, 250), []);
+  const debouncedInputChange2 = useCallback(_.debounce(updateName, 500), []);
 
   // useEffect to watch for changes in inputValue
   useEffect(() => {
@@ -59,8 +57,26 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     };
   }, [trayName, debouncedInputChange2]);
   
+  useEffect(() => {
+    if (firstRenderCheckedIn.current) {
+      firstRenderCheckedIn.current = false;
+      return;
+    }
+    sendDataToParent({myAction: 'checkedIn', checkedIn: checkedIn}, index);
+    return;
+  }, [checkedIn])
+
+  useEffect(() => {
+    if (firstRenderOpen.current) {
+      firstRenderOpen.current = false;
+      return;
+    }
+    sendDataToParent({myAction: 'openHold', open: open}, index);
+    return;
+  }, [open])
+
   function getColorA () {
-    if (trayStatus == "Sterile") {
+    if (open == true) {
       return styles.greenB;
     } else {
       return styles.green;
@@ -68,18 +84,18 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   }
 
   function getColorB () {
-    if (trayStatus == "?") {
-      return styles.yellowB;
+    if (open == false) {
+      return styles.redB;
     } else {
-      return styles.yellow;
+      return styles.red;
     }
   }
 
   function getColorC () {
-    if (trayStatus == "Dirty") {
-      return styles.redB;
+    if (checkedIn == true) {
+      return styles.blueB;
     } else {
-      return styles.red;
+      return styles.blue;
     }
   }
 
@@ -91,7 +107,7 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
         <TouchableOpacity 
           style={{marginTop: width * 0.015, marginLeft: width * 0.435, }}
           onPress={() => {
-            sendMessage("remove", trayName, location, trayStatus);
+            sendDataToParent({myAction: 'remove', tray: props}, index);
           }}
           >
           <Text allowFontScaling={false} style={{color:"#e31e1e"}}>Remove</Text>
@@ -119,30 +135,30 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
         <TouchableOpacity 
           style={getColorA()}
           onPress={() => {
-            setTrayStatus("Sterile");
-            sendMessage("updateLoanerStatus", trayName, location, "Sterile");
+            setOpen(true);
           }}
           >
-          <Text allowFontScaling={false} style={styles.statusText}>Sterile</Text>
+          <Text allowFontScaling={false} style={styles.statusText}>Open</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={getColorB()}
           onPress={() => {
-            setTrayStatus("?");
-            sendMessage("updateLoanerStatus", trayName, location, "?");
+            setOpen(false);
           }}
           >
-          <Text allowFontScaling={false} style={styles.statusText}>?</Text>
+          <Text allowFontScaling={false} style={styles.statusText}>Hold</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={getColorC()}
-          onPress={() => {
-            setTrayStatus("Dirty");
-            sendMessage("updateLoanerStatus", trayName, location, "Dirty");
-          }}
-          >
-          <Text allowFontScaling={false} style={styles.statusText}>Dirty</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <Text allowFontScaling={false} style={{fontSize: width * 0.04, marginLeft: width * 0.02, marginTop: width * 0.02, }}>Checked In</Text>
+          <TouchableOpacity 
+            style={{borderRadius: 5, borderWidth: width * 0.005, marginLeft: width * 0.02, }}
+            onPress={() => {
+              setCheckedIn(prev => !prev);
+            }}
+            >
+            <Text allowFontScaling={false} style={getColorC()}>X</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -190,47 +206,50 @@ const styles = StyleSheet.create({
       display: 'none'
   },
   green: {
-    width: width * 0.29, 
+    width: width * 0.28, 
     height: width * 0.09, 
-    backgroundColor: "#32a852", 
+    backgroundColor: "#ededed", 
     marginLeft: width * 0.02, 
     borderRadius: 5,
+    borderWidth: width * 0.002,
     paddingTop: width * 0.01,
+    opacity: 0.4,
   },
   greenB: {
-    width: width * 0.29, 
+    width: width * 0.28, 
     height: width * 0.09, 
     backgroundColor: "#32a852", 
     marginLeft: width * 0.02, 
     borderRadius: 5, 
     borderWidth: width * 0.01,
   },
-  yellow: {
-    width: width * 0.29, 
-    height: width * 0.09, 
-    backgroundColor: "#d1cc6f", 
-    marginLeft: width * 0.02, 
-    borderRadius: 5,
-    paddingTop: width * 0.01,
+  blue: {
+    width: width * 0.08, 
+    height: width * 0.08, 
+    opacity: 0,
   },
-  yellowB: {
-    width: width * 0.29, 
-    height: width * 0.09, 
-    backgroundColor: "#d1cc6f", 
-    marginLeft: width * 0.02, 
-    borderRadius: 5, 
-    borderWidth: width * 0.01,
+  blueB: {
+    width: width * 0.08, 
+    height: width * 0.08, 
+    backgroundColor: "rgba(0, 122, 255, 0.8)", 
+    borderRadius: 4,
+    fontSize: width * 0.06,
+    fontWeight: "bold",
+    paddingLeft: width * 0.02,
+    paddingTop: width * 0.004,
   },
   red: {
-    width: width * 0.29, 
+    width: width * 0.28, 
     height: width * 0.09, 
-    backgroundColor: "#d16f6f", 
+    backgroundColor: "#ededed", 
     marginLeft: width * 0.02, 
     borderRadius: 5,
+    borderWidth: width * 0.002,
     paddingTop: width * 0.01,
+    opacity: 0.4,
   },
   redB: {
-    width: width * 0.29, 
+    width: width * 0.28, 
     height: width * 0.09, 
     backgroundColor: "#d16f6f", 
     marginLeft: width * 0.02, 

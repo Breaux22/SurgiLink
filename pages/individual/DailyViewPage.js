@@ -118,6 +118,7 @@ const DailyViewPage = ({ navigation }) => {
             surgYear: year, 
             months: [month],
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

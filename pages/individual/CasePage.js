@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Image, Button, ScrollView, SafeAreaView, View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions } from 'react-native';
+import { Image, Button, ScrollView, SafeAreaView, View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
@@ -39,7 +39,6 @@ function CasePage () {
     const [mstStyle, setMstStyle] = useState(styles.collapsed);
     const [surgeonStyle, setSurgeonStyle] = useState(styles.collapsed);
     const [surgeonText, setSurgeonText] = useState("Choose Surgeon..."); // Surgeon Name
-    const [surgeonText2, setSurgeonText2] = useState("");
     const [surgeonList, setSurgeonList] = useState([]);
     const [mftStyle, setMftStyle] = useState(styles.collapsed);
     const [facilityStyle, setFacilityStyle] = useState(styles.collapsed);
@@ -61,6 +60,31 @@ function CasePage () {
     const [backStyle, setBackStyle] = useState(styles.back);
     const loadBarRef = useRef(loadBar);
     const { myMemory, setMyMemory } = useMemory();
+    const collapseTimeout = useRef(null);
+    const scrollViewRef = useRef(null);
+
+    const scrollToTop = () => {
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: 0, animated: true });
+        }
+    };
+
+    const handleValueChange = (value, mode) => {
+        if (mode == 1) {
+            setSurgeonText(value);
+        } else if (mode == 2) {
+            setFacilityText(value);
+        }
+        if (collapseTimeout.current) {
+            clearTimeout(collapseTimeout.current);
+        }
+        collapseTimeout.current = setTimeout(() => {
+            setMstStyle(styles.collapsed);
+            setSurgeonStyle(styles.collapsed);
+            setMftStyle(styles.collapsed);
+            setFacilityStyle(styles.collapsed);
+        }, 3000);
+    };
     
     async function saveData (userInfo) {
         setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
@@ -83,6 +107,8 @@ function CasePage () {
     async function deleteImageFromCloudinary () {
         const data = {
             publicId: previewImage.public_id,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -167,34 +193,32 @@ function CasePage () {
     
     async function handleChildData (data, index) {
         if (data.myAction == "remove") {
-            const newArr = trayList.filter((item, i) => i !== index);
-            setTrayList(prevArr => newArr);
-            removeTrayFromCase(data);
-        /*} else if (data.myAction == "updateStatus") {
-            updateTrayStatus(data);
-        } else if (data.myAction == "updateLocation") {
-            updateTrayLocation(data);
-        }*/ } else if (data.myAction == 'chooseTray') {
-            // change tray selected
-            const newArr = myTrays.filter((item, i) => item.trayName == data.trayName);
-            const tempArr = [...trayList];
-            tempArr[index] = newArr[0];
+            const tempArr = trayList.filter((item, i) => i !== index);
             setTrayList(prev => tempArr);
-        } /*else if (data.myAction == "updateLoanerLocation") {
-            updateTrayLocation(data);
-        }*/ else if (data.myAction == "updateLoanerName") {
-            /*if (data.trayId != undefined) {
-                updateLoanerName(data)
-            } else {*/
-                const tempArr = trayList;
-                tempArr[index] = data;
-                setTrayList(tempArr);
+            // if id not null, send request to server to remove tray from uses
+            if (data.tray.id != null) {
+                removeTrayFromCase(data.tray);
             }
-        /*} else if (data.myAction == "updateLoanerStatus") {
-            updateTrayStatus(data);
-        }*/ else {
+        } else if (data.myAction == 'chooseTray') {
+            // change tray selected
+            const tempArr = [...trayList];
+            tempArr[index] = data.newSet;
+            setTrayList(prev => tempArr);
+        } else if (data.myAction == "openHold") {
+            const tempArr = [...trayList];
+            tempArr[index].open = data.open;
+            setTrayList(prev => tempArr);
+        } else if (data.myAction == "checkedIn") {
+            const tempArr = [...trayList];
+            tempArr[index].checkedIn = data.checkedIn;
+            setTrayList(prev => tempArr);
+        } else if (data.myAction == 'updateLoanerName') {
             const tempArr = trayList;
-            tempArr[index] = data;
+            tempArr[index].trayName = data.newName;
+            setTrayList(tempArr);
+        } else if (data.myAction = 'updateLocation') {
+            const tempArr = trayList;
+            tempArr[index].location = data.location;
             setTrayList(tempArr);
         }
     };
@@ -204,6 +228,7 @@ function CasePage () {
             trayId: tray.trayId,
             newName: tray.trayName,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -220,29 +245,12 @@ function CasePage () {
         return;
     }
 
-    async function updateTrayStatus (tray) {
-        const data = {
-            trayId: tray.id,
-            trayStatus: tray.trayStatus,
-            userId: myMemory.userInfo.id,
-        }
-        const headers = {
-            'method': 'POST',
-            'headers': {
-                'content-type': 'application/json'
-            },
-            'body': JSON.stringify(data)
-        }
-        const url = 'https://surgiflow.replit.app/updateTrayStatus';
-        const response = await fetch(url, headers)
-        return;
-    }
-
     async function updateTrayLocation (tray) {
         const data = {
             trayId: tray.id,
             location: tray.location,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -260,6 +268,8 @@ function CasePage () {
         const data = {
             trayId: tray.id,
             caseId: caseId,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -280,7 +290,8 @@ function CasePage () {
 
     async function getSurgeons() {
         const data = {
-            userId: myMemory.userInfo.id
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -294,11 +305,19 @@ function CasePage () {
             .then(response => response.json())
             .then(data => {return data})
         setSurgeonList(response);
+        setSurgeonText(prev => {
+            for(const surg of response){
+                if (surg.id == myCase.dr) {
+                    return surg.surgeonName
+                }
+            }    
+        })
     }
 
     async function getFacilities() {
         const data = {
-            userId: myMemory.userInfo.id
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -316,7 +335,8 @@ function CasePage () {
 
     async function getMyTrays() {
         const data = {
-            userId: myMemory.userInfo.id
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -334,7 +354,9 @@ function CasePage () {
 
     async function getCaseTrayUses () {
         const data = {
-            caseId: caseId
+            caseId: caseId,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -354,6 +376,7 @@ function CasePage () {
         const data = {
             surgeonName: surgeonText,
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -363,19 +386,18 @@ function CasePage () {
             'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/addSurgeon', headers)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Data Not Saved')
-                }
-            })
-        return response;
+            .then(response => response.json())
+            .then(data => {return data})
+        const tempArr = [...surgeonList, response[0]];
+        tempArr.sort((a,b) => a.surgeonName - b.surgeonName);
+        setSurgeonList(prev => tempArr);
     }
 
-    // not refactored
     async function addFacilityToDB() {
         const data = {
             facilityName: facilityText,
-            userId: myMemory.userInfo.id
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -397,6 +419,7 @@ function CasePage () {
           const data = {
               trayName: loanerName,
               userId: myMemory.userInfo.id,
+              sessionString: myMemory.userInfo.sessionString,
           }
           const headers = {
               'method': 'POST',
@@ -417,6 +440,8 @@ function CasePage () {
     async function deleteCase() {
         const data = {
             caseId: caseId,
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -451,17 +476,45 @@ function CasePage () {
       );
 
     async function updateCase () {
+        for (const tray of trayList) {
+            if (tray.trayName == 'Choose Tray...') {
+                Alert.alert(
+                  "Missing Values",
+                  'Tray Value Cannot be "Choose Tray..."',
+                  [
+                    { text: "OK", onPress: () => console.log("OK1 Pressed") }
+                  ]
+                );
+                return;
+            } else if (tray.trayName == "") {
+                Alert.alert(
+                  "Missing Values",
+                  "Loaner Name Cannot Be Blank.",
+                  [
+                    { text: "OK", onPress: () => console.log("OK2 Pressed") }
+                  ]
+                );
+                return;
+            }
+        }
+        const tempArr = [];
+        surgeonList.map((item, index) => {
+            if (item.surgeonName === surgeonText) {
+                tempArr.push(item.id)
+            }
+        })
         const caseData = {
             caseId: caseId,
             dateString: new Date(surgdate - (1000*60*60*8)),
             surgDate: new Date(surgdate - (1000*60*60*8)),
             surgTime: new Date(surgdate - (1000*60*60*8)),
             procType: proctype,
-            dr: surgeonText,
+            dr: tempArr[0],
             hosp: facilityText,
             notes: notes,
             trayList: JSON.stringify(trayList),
             userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -496,7 +549,6 @@ function CasePage () {
         setSurgtime(new Date(new Date(myCase.surgdate).getTime() + (1000*60*60*8)));
         setProctype(myCase.proctype);
         setFacilityText(myCase.hosp);
-        setSurgeonText(myCase.dr);
         setNotes(myCase.notes);
     }
 
@@ -504,6 +556,7 @@ function CasePage () {
         setPreviewImage(imageData);
         setPreviewStyle(styles.preview);
         setBackStyle(styles.collapsed);
+        scrollToTop();
     }
 
     async function closePreview () {
@@ -568,7 +621,7 @@ function CasePage () {
                     <Text allowFontScaling={false} style={{fontSize: width * 0.05}}>Done</Text>
                 </TouchableOpacity>
             </View>
-            <ScrollView style={styles.container}>
+            <ScrollView ref={scrollViewRef} style={styles.container}>
                 <Text allowFontScaling={false} style={styles.title}>Surgery Date & Time:</Text>
                 <View style={styles.row}>
                     <DateTimePicker
@@ -624,17 +677,15 @@ function CasePage () {
                             style={styles.textInput}
                             onChangeText={(params) => {
                                 setSurgeonText(params);
-                                setSurgeonText2(params);
                             }}
                             placeholder='Type New Name Here...'
-                            value={surgeonText2}
+                            value={surgeonText}
                         />
                     </View>
                     <View style={styles.row}>
                         <TouchableOpacity onPress={() => {
                             setMstStyle(styles.collapsed);
                             setSurgeonText("Choose Surgeon...");
-                            setSurgeonText2("");
                         }}>
                             <View style={styles.smallCancel}>
                                 <Text allowFontScaling={false} style={styles.smallButtonText}>Cancel</Text>
@@ -643,7 +694,6 @@ function CasePage () {
                         <TouchableOpacity onPress={() => {
                             setMstStyle(styles.collapsed);
                             setSurgeonStyle(styles.collapsed);
-                            setSurgeonText2("");
                             addSurgeonToDB();
                         }}>
                             <View style={styles.smallButton}>
@@ -655,19 +705,16 @@ function CasePage () {
                 <Picker
                     selectedValue={surgeonText}
                     onValueChange={(itemValue/*, itemIndex*/) => {
-                        setSurgeonText(itemValue);
                         if (itemValue == "...") {
                             setMstStyle(styles.container);
                         } else {
-                            setMstStyle(styles.collapsed);
-                            setSurgeonStyle(styles.collapsed);
+                            handleValueChange(itemValue, 1);
                         }
                     }}
                     style={surgeonStyle}
                 >        
-                    <Picker.Item label="Choose Surgeon..." value="Choose Surgeon..." />
                     {surgeonList.map((item, index) => (
-                        <Picker.Item key={item.surgeonName + index} label={item.surgeonName} value={item.surgeonName} />
+                        <Picker.Item key={item.id + "A" + index} label={item.surgeonName} value={item.surgeonName} />
                     ))}
                     <Picker.Item label="Enter New Surgeon Manually..." value="..." />
                 </Picker>
@@ -746,19 +793,17 @@ function CasePage () {
                 <Picker
                     selectedValue={facilityText}
                     onValueChange={(itemValue/*, itemIndex*/) => {
-                        setFacilityText(itemValue);
                         if (itemValue == "...") {
                             setMftStyle(styles.container);
                         } else {
-                            setMftStyle(styles.collapsed);
-                            setFacilityStyle(styles.collapsed);
+                            handleValueChange(itemValue, 2);
                         }
                     }}
                     style={facilityStyle}
                 >
                     <Picker.Item label="Choose Facility..." value="Choose Facility…" />
                     {facilityList.map((item, index) => (
-                        <Picker.Item key={item.facilityName + index} label={item.facilityName} value={item.facilityName} />
+                        <Picker.Item key={item.facilityName + "B" + index} label={item.facilityName} value={item.facilityName} />
                     ))}
                     <Picker.Item label="Enter New Facility Manually..." value="..." />
                 </Picker>
@@ -766,14 +811,13 @@ function CasePage () {
                 <View>
                     <View>
                         {trayList.map((item, index) => {
-                            console.log("TL Item: ", item)
                             if (item.loaner == false) {
-                                return (<View key={item.trayName + index}>
-                                    <ConsignmentSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                return (<View key={item.trayName + "C" + index}>
+                                    <ConsignmentSet surgdate={surgdate} sendDataToParent={handleChildData} props={item} myTrays={myTrays}  index={index}/>
                                 </View>)
                             } else {
-                                return (<View key={item.trayName + index}>
-                                    <LoanerSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} statuses={statuses} index={index}/>
+                                return (<View key={item.trayName + "D" + index}>
+                                    <LoanerSet sendDataToParent={handleChildData} props={item} myTrays={myTrays} index={index}/>
                                 </View>)
                             }
                         })}
@@ -782,7 +826,7 @@ function CasePage () {
                         <TouchableOpacity 
                             style={{width: width * 0.522, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} 
                             onPress={() => {
-                                setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", trayStatus: '?', location: '', loaner: false}]);
+                                setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", location: '', loaner: false, checkedIn: false, open: true}]);
                             //setLoanerStyle(styles.collapsed);
                             }}>
                             <View style={styles.row}>
@@ -791,7 +835,7 @@ function CasePage () {
                             </View>                    
                         </TouchableOpacity>
                         <TouchableOpacity style={{width: width * 0.418, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} onPress={() => {
-                            setTrayList((trayList) => [...trayList, {id: null, trayName: "", trayStatus: '?', location: '', loaner: true,}]);
+                            setTrayList((trayList) => [...trayList, {id: null, trayName: "", location: '', loaner: true, checkedIn: false, open: true}]);
                         }}>
                             <View style={[styles.row, {textAlign: "center"}]}>
                                 <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Loaner Tray</Text>
