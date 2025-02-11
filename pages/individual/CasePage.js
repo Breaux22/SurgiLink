@@ -20,7 +20,6 @@ function CasePage () {
     const navigation = useNavigation();
     const myCase = route.params?.caseProp;
     const backTo = route.params?.backTo;
-    console.log(myCase)
     const caseId = myCase['caseId'] || myCase['id'];
     const [surgdate, setSurgdate] = useState(new Date()); // surgdate
     const [surgtime, setSurgtime] = useState(new Date()); // time
@@ -43,8 +42,7 @@ function CasePage () {
     const [surgeonList, setSurgeonList] = useState([]);
     const [mftStyle, setMftStyle] = useState(styles.collapsed);
     const [facilityStyle, setFacilityStyle] = useState(styles.collapsed);
-    const [facilityText, setFacilityText] = useState("Choose Facility…"); // Surgeon Name
-    const [facilityText2, setFacilityText2] = useState("");
+    const [facilityText, setFacilityText] = useState(myCase.facilityName || "Choose Facility..."); // Surgeon Name
     const [facilityList, setFacilityList] = useState([]);
     const [images, setImages] = useState([]); // array of image data from cloudinary
     const [loading, setLoading] = useState(styles.collapsed);
@@ -63,6 +61,7 @@ function CasePage () {
     const { myMemory, setMyMemory } = useMemory();
     const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
+    const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -385,6 +384,7 @@ function CasePage () {
         const tempArr = [...surgeonList, response[0]];
         tempArr.sort((a,b) => a.surgeonName - b.surgeonName);
         setSurgeonList(prev => tempArr);
+        return;
     }
 
     async function addFacilityToDB() {
@@ -401,12 +401,13 @@ function CasePage () {
             'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/addFacility', headers)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Data Not Saved')
-                }
-            })
-        return response;
+            .then(response => response.json())
+            .then(data => {return data})
+        console.log("response: ",response)
+        const tempArr = [...facilityList, response[0]];
+        tempArr.sort((a,b) => a.facilityName - b.facilityName);
+        setFacilityList(prev => tempArr);
+        return;
     }
 
       async function addLoanerToDB() {
@@ -494,7 +495,13 @@ function CasePage () {
         const tempArr = [];
         surgeonList.map((item, index) => {
             if (item.surgeonName === surgeonText) {
-                tempArr.push(item.id)
+                tempArr.push(item.id);
+            }
+        })
+        const tempArr2 = [];
+        facilityList.map((item, index) => {
+            if (item.facilityName === facilityText) {
+                tempArr2.push(item.id);
             }
         })
         const caseData = {
@@ -504,7 +511,7 @@ function CasePage () {
             surgTime: new Date(surgdate - (1000*60*60*8)),
             procType: proctype,
             dr: tempArr[0],
-            hosp: facilityText,
+            hosp: tempArr2[0],
             notes: notes,
             trayList: JSON.stringify(trayList),
             userId: myMemory.userInfo.id,
@@ -542,7 +549,6 @@ function CasePage () {
         setSurgdate(new Date(new Date(myCase.surgdate).getTime() + (1000*60*60*8)));
         setSurgtime(new Date(new Date(myCase.surgdate).getTime() + (1000*60*60*8)));
         setProctype(myCase.proctype);
-        setFacilityText(myCase.hosp);
         setNotes(myCase.notes);
     }
 
@@ -594,12 +600,29 @@ function CasePage () {
 
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
+            <View style={deleteStyle}>
+                <View style={{position: "absolute", width: width * 0.8, height: width * 0.35, marginLeft: width * 0.1, marginTop: width * 0.35, backgroundColor: "#fff", borderRadius: 5, borderWidth: width * 0.005,}}>
+                    <Text allowFontScaling={false} style={{fontSize: width * 0.07, textAlign: "justify", padding: width * 0.02,}}>Are you sure you want to delete this case?</Text>
+                    <View style={styles.row}>
+                        <TouchableOpacity
+                            onPress={() => setDeleteStyle(styles.collapsed)}
+                            >
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: width * 0.1, width: width * 0.25, textAlign: "center", backgroundColor: "#d6d6d7", borderRadius: 5, fontSize: width * 0.06, paddingTop: width * 0.01}}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => deleteCase()}
+                            >
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: width * 0.1, width: width * 0.25, textAlign: "center", backgroundColor: "#d16f6f", borderRadius: 5, fontSize: width * 0.06, paddingTop: width * 0.01}}>Delete</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
             <View style={{flexDirection: "row", borderBottomWidth: width * 0.002, borderBottomColor: "#cfcfcf", height: width * 0.124}}>
                 <TouchableOpacity
                     style={{marginTop: width * 0.023, marginBottom: width * 0.03, marginLeft: width * 0.02, }}
                     onPress={async () => {
                         // save case then go back
-                        deleteCase();
+                        setDeleteStyle(styles.deleteStyle);
                     }}
                     >
                     {/*<Image source={require('../../assets/icons/left-arrow-thin.png')} style={styles.icon}/>*/}
@@ -701,6 +724,7 @@ function CasePage () {
                     onValueChange={(itemValue/*, itemIndex*/) => {
                         if (itemValue == "...") {
                             setMstStyle(styles.container);
+                            setSurgeonText("");
                         } else {
                             handleValueChange(itemValue, 1);
                         }
@@ -756,17 +780,15 @@ function CasePage () {
                             style={styles.textInput}
                             onChangeText={(params) => {
                                 setFacilityText(params);
-                                setFacilityText2(params);
                             }}
                             placeholder='Type New Name Here...'
-                            value={facilityText2}
+                            value={facilityText}
                         />
                     </View>
                     <View style={styles.row}>
                         <TouchableOpacity onPress={() => {
                             setMftStyle(styles.collapsed);
-                            setFacilityText("Choose Facility…");
-                            setFacilityText2("");
+                            setFacilityText("Choose Facility...");
                         }}>
                             <View style={styles.smallCancel}>
                                 <Text allowFontScaling={false} style={styles.smallButtonText}>Cancel</Text>
@@ -775,7 +797,6 @@ function CasePage () {
                         <TouchableOpacity onPress={() => {
                             setMftStyle(styles.collapsed);
                             setFacilityStyle(styles.collapsed);
-                            setFacilityText2("");
                             addFacilityToDB();
                         }}>
                             <View style={styles.smallButton}>
@@ -789,13 +810,13 @@ function CasePage () {
                     onValueChange={(itemValue/*, itemIndex*/) => {
                         if (itemValue == "...") {
                             setMftStyle(styles.container);
+                            setFacilityText("");
                         } else {
                             handleValueChange(itemValue, 2);
                         }
                     }}
                     style={facilityStyle}
                 >
-                    <Picker.Item label="Choose Facility..." value="Choose Facility…" />
                     {facilityList.map((item, index) => (
                         <Picker.Item key={item.facilityName + "B" + index} label={item.facilityName} value={item.facilityName} />
                     ))}
@@ -965,6 +986,13 @@ function CasePage () {
         marginTop: -width * 0.09,
         color: "#fff",
     },
+    deleteStyle: {
+        width: width,
+        height: height,
+        position: "absolute",
+        backgroundColor: "rgba(0,0,0,0.3)",
+        zIndex: 1
+    },
     image: {
         marginLeft: width * 0.01,
         marginBottom: width * 0.01,
@@ -986,7 +1014,7 @@ function CasePage () {
         fontSize: width * 0.03
     },
     textInput: {
-        color: "#39404d"
+        color: "#39404d", 
     },
     expandingTextInput: {
         width: width * 0.96,
@@ -998,7 +1026,7 @@ function CasePage () {
     },
     textBox: {
         width: width * 0.96,
-        height: width * 0.08,
+        height: width * 0.1,
         marginLeft: width * 0.02,
         marginTop: width * 0.02,
         padding: width * 0.02,

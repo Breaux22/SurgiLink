@@ -261,8 +261,30 @@ const ListPage = () => {
     }
 
     function daysFormat (surgdate) {
-        let numDays = Math.round(((new Date(surgdate).getTime())-(new Date().getTime()))/(1000*60*60*24))
-        return numDays;
+        const formatted = new Date(surgdate.getTime() + (1000*60*60*8));
+        const today = new Date();
+        const hoursToEnd = 24 - today.getHours();
+        console.log("HTE: ", hoursToEnd);
+        const hoursFuture = (formatted.getTime() - today.getTime())/(1000*60*60);
+        console.log("HTF: ", hoursFuture);
+        const daysFuture = Math.round((hoursFuture + today.getHours())/24);
+        console.log("DF Rounded: ", daysFuture)
+        if (daysFuture == 0) {
+            if (hoursFuture >= 0) {
+                return `TODAY, In ${Math.round(hoursFuture)} Hours`;   
+            } else {
+                return `STARTED ${Math.round(-hoursFuture)} Hours Ago`;
+            }
+        } else {
+            if (daysFuture > 365) {
+                    return `In ${Math.round(daysFuture/365)} Year/s`; 
+            } else if (daysFuture > 31) {
+                return `In ${Math.round(daysFuture/31)} Month/s`;
+            } else {
+                return `In ${daysFuture} Day/s`;
+            }
+        }
+        
     }
 
     function cellColor (index) {
@@ -284,7 +306,6 @@ const ListPage = () => {
             setCurrTray(prev => myTray.trayName);
             setCurrTrayObj(myTray);
             setLocation(prev => myTray.location);
-            console.log("UA: ", usesArr);
             if (usesArr.length > 0) {
                 setUsesComp(prev => 
                     <View>
@@ -309,7 +330,7 @@ const ListPage = () => {
                                         })
                                     }}
                                     >
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>In {daysFormat(item.surgdate)} days @ {formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>{daysFormat(new Date(item.surgdate))} @ {formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
                                     <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>

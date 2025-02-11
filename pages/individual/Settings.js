@@ -237,7 +237,7 @@ function SettingsPage () {
         const response = await fetch(url, headers)
             .then(response => response.json())
             .then(data => {return data})
-        var tempArr = response.map((facil) => ({ name: facil.facilityName, myState: false, editStyle: styles.edit, nameStyle: styles.facilityText, inputStyle: styles.collapsed }));
+        var tempArr = response.map((facil) => ({ id: facil.id, name: facil.facilityName, myState: false, editStyle: styles.edit, nameStyle: styles.facilityText, inputStyle: styles.collapsed }));
         setFacilChecklist(tempArr);
         setFacilityList(response);
         setDelete2(styles.collapsed);

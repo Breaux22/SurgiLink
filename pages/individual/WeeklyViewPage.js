@@ -133,8 +133,8 @@ const WeeklyViewPage = () => {
 
     async function getCases () {
         let monthArr = [];
-        if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth()]}
-        else {monthArr = [weekStart.getMonth(), new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()]}
+        if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth() + 1]}
+        else {monthArr = [weekStart.getMonth() + 1, new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth() + 1]}
         const data = {
             surgYear: weekStart.getFullYear(),
             months: monthArr,

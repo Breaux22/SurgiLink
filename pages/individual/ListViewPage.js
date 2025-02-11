@@ -145,22 +145,22 @@ const ListPage = () => {
 
     async function prevMonth () {
         if (month === 0) {
-            getCases(year - 1, [11]);
+            getCases(year - 1, [12]);
             setMonth(11);
             setYear((prevYear) => prevYear - 1);
         } else {
-            getCases(year, [month - 1]);
+            getCases(year, [month]);
             setMonth((prevMonth) => prevMonth - 1);
         }
     }
 
     async function nextMonth () {
         if (month === 11) {
-            getCases(year + 1, [0]);
+            getCases(year + 1, [1]);
             setMonth(0);
             setYear((prevYear) => prevYear + 1);
         } else {
-            getCases(year, [month + 1]);
+            getCases(year, [month + 2]);
             setMonth((prevMonth) => prevMonth + 1);
         }
     }
@@ -294,7 +294,7 @@ const ListPage = () => {
             let tempArr = [];
             for (const value of filterBy) {
                 cases.map((item, index) => {
-                    if (item.hosp == value.facilityName) {
+                    if (item.facilityName == value.facilityName) {
                         tempArr.push(item);
                     }
                 })
@@ -330,7 +330,7 @@ const ListPage = () => {
         getSurgeons();
         getFacilities();
         (async () => {
-            var caseArray = await getCases(year || new Date().getFullYear(), [month] || [new Date().getMonth()]);
+            var caseArray = await getCases(year || new Date().getFullYear(), [month + 1] || [new Date().getMonth() + 1]);
             caseArray = await caseArray.sort((a,b) => new Date(a.dateString) - new Date(b.dateString));
             setCases(oldCases => caseArray);
         })();
@@ -594,7 +594,7 @@ const ListPage = () => {
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.surgeonName}</Text>
                             </View>
                             <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
-                                <Text allowFontScaling={false} style={styles.cellText}>{myCase.hosp}</Text>
+                                <Text allowFontScaling={false} style={styles.cellText}>{myCase.facilityName}</Text>
                             </View>
                             <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.proctype}</Text>

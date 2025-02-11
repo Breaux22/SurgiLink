@@ -132,11 +132,11 @@ const MonthlyViewPage = () => {
 
     async function getCases (year, months) {
         const data = {
-            surgYear: year, 
+            surgYear: year,
             months: months,
             userId: myMemory.userInfo.id,
             sessionString: myMemory.userInfo.sessionString,
-        }    
+        }
         const headers = {
             'method': 'POST',
             'headers': {
@@ -208,7 +208,7 @@ const MonthlyViewPage = () => {
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName: "Surgeon?"}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -240,7 +240,7 @@ const MonthlyViewPage = () => {
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
                             <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.hosp}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -361,7 +361,7 @@ const MonthlyViewPage = () => {
     }
 
     useEffect(() => {
-        getCases(currYear, [currMonth]);
+        getCases(currYear, [currMonth + 1]);
     }, [currMonth])
 
     useEffect(() => {
@@ -471,7 +471,7 @@ const MonthlyViewPage = () => {
             </View>
             <View style={{padding: width * 0.021, flexDirection: "row"}}>
                 <TouchableOpacity
-                    onPress={() => getCases(currYear, [currMonth])}
+                    onPress={() => getCases(currYear, [currMonth + 1])}
                     >
                     <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.09, height: width * 0.09}}/>
                 </TouchableOpacity>
