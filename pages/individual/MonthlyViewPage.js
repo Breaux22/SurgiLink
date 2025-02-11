@@ -50,7 +50,12 @@ const MonthlyViewPage = () => {
           'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
-          .then(response => response.json())
+          .then(response => {
+                if (!response.ok){
+                    console.error("Error - verifySession()")
+                }
+                response.json()
+            })
           .then(data => {return data})
     
         if (response.myMessage == 'Invalid Session.') {
@@ -77,6 +82,12 @@ const MonthlyViewPage = () => {
         }
         const url = 'https://surgiflow.replit.app/logout';
         const response = await fetch(url, headers)
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - logout()")
+                    }
+                    response.json()
+                }))
         return
     }
 
@@ -147,7 +158,12 @@ const MonthlyViewPage = () => {
         //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/getCases';
         const url = 'https://surgiflow.replit.app/getCases';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - geCases()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         const tempArr = [...response];
         tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));

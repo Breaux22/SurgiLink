@@ -60,7 +60,12 @@ const ListPage = () => {
           'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
-          .then(response => response.json())
+          .then(response => {
+                if (!response.ok){
+                    console.error("Error - sessionVerify()")
+                }
+                response.json()
+            })
           .then(data => {return data})
 
         if (response.myMessage == 'Invalid Session.') {
@@ -87,6 +92,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/logout';
         const response = await fetch(url, headers)
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - logout()")
+                    }
+                    response.json()
+                }))
         return
     }
 
@@ -104,7 +115,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/getSurgeons';
         const response = await fetch(url, headers)
-        .then(response => response.json())
+        .then(response => {
+                if (!response.ok){
+                    console.error("Error - getSurgeons()")
+                }
+                response.json()
+            })
         .then(data => {return data})
         setSurgeons(prev => response);
         return
@@ -124,7 +140,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/getFacilities';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getFacilities()")
+                }
+                response.json()
+            })
             .then(data => setFacilities(prev => data))
         return
     }
@@ -186,7 +207,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/getCases';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getCases()")
+                }
+                response.json()
+            })
             .then(data => {
                 setCases(prev => data);
             })

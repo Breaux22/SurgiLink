@@ -240,7 +240,7 @@ function CasePage () {
         const url = 'https://surgiflow.replit.app/updateTrayName';
         const response = await fetch(url, headers)
             .then(response => {
-                if (!response.ok) {console.error("Error updating loaner tray name.")}
+                if (!response.ok) {console.error("Error - updateLoanerName()")}
             })
         return;
     }
@@ -261,6 +261,11 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/updateTrayLocation';
         const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Error - updateTrayLocation()');
+                }
+            })
         return;
     }
 
@@ -280,6 +285,11 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/removeTrayFromCase';
         const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Error - removeTrayFromCase()")
+                }
+            })
         return;
     }
 
@@ -302,7 +312,12 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/getSurgeons';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Error - getSurgeons()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         setSurgeonList(response);
     }
@@ -321,7 +336,12 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/getFacilities';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getFacilities()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         setFacilityList(response);
     }
@@ -340,7 +360,12 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/getTrays';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getMyTrays()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         setMyTrays(response);
     }
@@ -360,7 +385,12 @@ function CasePage () {
         }
         const url = 'https://surgiflow.replit.app/getCaseTrayUses';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getCaseTrayUses()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         setTrayList(prev => response);
     }
@@ -379,7 +409,12 @@ function CasePage () {
             'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/addSurgeon', headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - addSurgeonToDB()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         const tempArr = [...surgeonList, response[0]];
         tempArr.sort((a,b) => a.surgeonName - b.surgeonName);
@@ -401,9 +436,13 @@ function CasePage () {
             'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/addFacility', headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - addFacilityToDB()")
+                }
+                response.json()
+            })
             .then(data => {return data})
-        console.log("response: ",response)
         const tempArr = [...facilityList, response[0]];
         tempArr.sort((a,b) => a.facilityName - b.facilityName);
         setFacilityList(prev => tempArr);
@@ -426,7 +465,7 @@ function CasePage () {
           const response = await fetch('https://surgiflow.replit.app/addTray', headers)
               .then(response => {
                   if (!response.ok) {
-                      console.error('Data Not Saved')
+                      console.error('Error - addLoanerToDB()')
                   }
               })
           return response;
@@ -448,7 +487,7 @@ function CasePage () {
         const response = await fetch('https://surgiflow.replit.app/deleteCase', headers)
             .then(response => {
                 if (!response.ok) {
-                    console.error('Error deleting case.')
+                    console.error('Error - deleteCase()')
                 } else {
                     navigation.reset({
                         index: 0,
@@ -528,14 +567,14 @@ function CasePage () {
         //const response = await fetch('https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/updateCase', headers)
             .then(response => {
                 if (!response.ok) {
-                    console.error('Data Not Saved')
+                    console.error('Error - updateCase()')
                 } else if (response.ok) {
                     navigation.reset({
                       index: 0,
                       routes: [{ name: backTo.name, params: backTo.params }],
                     });
                 }
-            })
+            })q
         return response;
     }
 

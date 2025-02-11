@@ -76,7 +76,12 @@ function SettingsPage () {
           'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
-          .then(response => response.json())
+          .then(response => {
+              if (!response.ok){
+                  console.error("Error - verifySession()")
+              }
+              response.json()
+          })
           .then(data => {return data})
   
         if (response.myMessage == 'Invalid Session.') {
@@ -103,6 +108,12 @@ function SettingsPage () {
         }
         const url = 'https://surgiflow.replit.app/logout';
         const response = await fetch(url, headers)
+          .then(response => {
+                if (!response.ok){
+                    console.error("Error - logout()")
+                }
+                response.json()
+            }))
         return
     }
 
@@ -137,7 +148,7 @@ function SettingsPage () {
       const response = await fetch(`https://surgiflow.replit.app/${url}`, headers)
         .then(async response => {
             if (!response.ok) {
-                console.error('Data Not Saved')
+                console.error('Error - deleteItems()')
             } else if (response.ok) {
                 follow();
                 setDeleteNum(styles.collapsed);
@@ -182,7 +193,7 @@ function SettingsPage () {
       const response = await fetch(`https://surgiflow.replit.app/${url}`, headers)
         .then(async response => {
             if (!response.ok) {
-                console.error('Data Not Saved')
+                console.error('Error - addItem()')
             } else if (response.ok) {
                 follow();
             }
@@ -213,7 +224,12 @@ function SettingsPage () {
         }
         const url = 'https://surgiflow.replit.app/getSurgeons';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+              if (!response.ok){
+                  console.error("Error - getSurgeons()")
+              }
+              response.json()
+          })
             .then(data => {return data})
         var tempArr = response.map((surg) => ({ id: surg.id, name: surg.surgeonName, myState: false, editStyle: styles.edit, nameStyle: styles.surgeonText, inputStyle: styles.collapsed }));
         setSurgChecklist(tempArr);
@@ -235,7 +251,12 @@ function SettingsPage () {
         }
         const url = 'https://surgiflow.replit.app/getFacilities';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+              if (!response.ok){
+                  console.error("Error - getFacilities()")
+              }
+              response.json()
+          })
             .then(data => {return data})
         var tempArr = response.map((facil) => ({ id: facil.id, name: facil.facilityName, myState: false, editStyle: styles.edit, nameStyle: styles.facilityText, inputStyle: styles.collapsed }));
         setFacilChecklist(tempArr);
@@ -257,7 +278,12 @@ function SettingsPage () {
         }
         const url = 'https://surgiflow.replit.app/getTrays';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+              if (!response.ok){
+                  console.error("Error - getTrays()")
+              }
+              response.json()
+          })
             .then(data => {return data})
         var tempArr = response.map((tray) => ({ name: tray.trayName, myState: false, editStyle: styles.edit, nameStyle: styles.trayText, inputStyle: styles.collapsed }));
         setTrayChecklist(tempArr);
@@ -317,7 +343,7 @@ function SettingsPage () {
       const response = await fetch(`https://surgiflow.replit.app/updateSurgeon`, headers)
         .then(async response => {
             if (!response.ok) {
-                console.error('Data Not Saved')
+                console.error('Error - updateSurgeon()')
             } else if (response.ok) {
                 updateVisible(setSurgChecklist, index, 1);
                 getSurgeons();
@@ -343,7 +369,7 @@ function SettingsPage () {
       const response = await fetch(`https://surgiflow.replit.app/updateFacility`, headers)
         .then(async response => {
             if (!response.ok) {
-                console.error('Data Not Saved')
+                console.error('Error - updateFacility()')
             } else if (response.ok) {
                 updateVisible(setFacilChecklist, index, 1);
                 getFacilities();
@@ -369,7 +395,7 @@ function SettingsPage () {
       const response = await fetch(`https://surgiflow.replit.app/updateTrayName`, headers)
         .then(async response => {
             if (!response.ok) {
-                console.error('Data Not Saved')
+                console.error('Error - updateTray()')
             } else if (response.ok) {
                 updateVisible(setTrayChecklist, index, 1);
                 getTrays();

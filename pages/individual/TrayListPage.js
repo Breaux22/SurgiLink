@@ -63,7 +63,12 @@ const ListPage = () => {
           'body': JSON.stringify(data)
         }
         const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
-          .then(response => response.json())
+          .then(response => {
+                if (!response.ok){
+                    console.error("Error - verifySession()")
+                }
+                response.json()
+            })
           .then(data => {return data})
 
         if (response.myMessage == 'Invalid Session.') {
@@ -90,7 +95,13 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/logout';
         const response = await fetch(url, headers)
-        return
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - logout()")
+                    }
+                    response.json()
+                })
+        return;
     }
 
     async function openMenu() {
@@ -148,7 +159,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/getTrays';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getTrays()")
+                }
+                response.json()
+            })
             .then(data => {
                 setTrays(prev => data);
                 return;
@@ -170,7 +186,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/getTrayUses';
         const response = await fetch(url, headers)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - getTrayUses()")
+                }
+                response.json()
+            })
             .then(data => {return data})
         const tempArr = [...response];
         tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
@@ -194,6 +215,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/updateTrayLocation';
         const response = await fetch(url, headers);
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - updateTrayLocation()")
+                    }
+                    response.json()
+                })
         getTrays();
         getTrayUses();
         return;
@@ -215,6 +242,12 @@ const ListPage = () => {
         }
         const url = 'https://surgiflow.replit.app/updateTrayName';
         const response = await fetch(url, headers)
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - getFacilities()")
+                    }
+                    response.json()
+                })
         getTrays();
         getTrayUses();
         return;
