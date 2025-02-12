@@ -67,7 +67,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - verifySession()")
                 }
-                response.json()
+                return response.json()
             })
           .then(data => {return data})
 
@@ -99,7 +99,7 @@ const ListPage = () => {
                     if (!response.ok){
                         console.error("Error - logout()")
                     }
-                    response.json()
+                    return response.json()
                 })
         return;
     }
@@ -163,7 +163,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - getTrays()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {
                 setTrays(prev => data);
@@ -190,7 +190,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - getTrayUses()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...response];
@@ -214,12 +214,12 @@ const ListPage = () => {
             'body': JSON.stringify(data)
         }
         const url = 'https://surgiflow.replit.app/updateTrayLocation';
-        const response = await fetch(url, headers);
+        const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
                         console.error("Error - updateTrayLocation()")
                     }
-                    response.json()
+                    return response.json()
                 })
         getTrays();
         getTrayUses();
@@ -246,7 +246,7 @@ const ListPage = () => {
                     if (!response.ok){
                         console.error("Error - getFacilities()")
                     }
-                    response.json()
+                    return response.json()
                 })
         getTrays();
         getTrayUses();

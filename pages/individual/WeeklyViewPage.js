@@ -67,7 +67,7 @@ const WeeklyViewPage = () => {
                 if (!response.ok){
                     console.error("Error - verifySession()")
                 }
-                response.json()
+                return response.json()
             })
           .then(data => {return data})
 
@@ -99,7 +99,7 @@ const WeeklyViewPage = () => {
                     if (!response.ok){
                         console.error("Error - logout()")
                     }
-                    response.json()
+                    return response.json()
                 })
         return
     }
@@ -164,7 +164,7 @@ const WeeklyViewPage = () => {
                 if (!response.ok){
                     console.error("Error - getCases()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data});
         const tempArr = [... response];

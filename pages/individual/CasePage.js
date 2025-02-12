@@ -120,7 +120,7 @@ function CasePage () {
         const response = await fetch('https://surgiflow.replit.app/destroyImage', headers)
             .then(response => {
                 if (!response.ok) {
-                    console.error('Error; Image Not Deleted.')
+                    console.error('Error - deleteImageFromCloudinary()')
                 } else if (response.ok) {
                     console.error('Image Removed.');
                 }
@@ -159,13 +159,38 @@ function CasePage () {
     useEffect(() => {
         loadBarRef.current = loadBar;
     }, [loadBar]);
+
+    async function getCloudCreds () {
+        const data = {
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json',
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/getCloudinaryCreds';
+        const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Error - getCloudCreds()')
+                }
+                return response.json()
+            })
+            .then(data => {return data})
+        return response;
+    }
     
     async function fetchImages() {
         setLoading(styles.icon2);
         try {
-          const url = `https://api.cloudinary.com/v1_1/dxu39drpj/resources/image/upload?prefix=${caseId}&max_results=50`;
+          const cloudCreds = await getCloudCreds();
+          const url = `https://api.cloudinary.com/v1_1/${cloudCreds.cloud_name}/resources/image/upload?prefix=${caseId}&max_results=50`;
           // Basic Authentication (you need API key and API secret)
-          const credentials = `439165798135593:Oyq3vYHkorc8QraXmZg55_I7cI0`;
+          const credentials = `${cloudCreds.api_key}:${cloudCreds.api_secret}`;
           const encodedCredentials = Buffer.from(credentials).toString('base64');
           const response = await fetch(url, {
             method: 'GET',
@@ -316,7 +341,7 @@ function CasePage () {
                 if (!response.ok) {
                     console.error("Error - getSurgeons()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setSurgeonList(response);
@@ -340,7 +365,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getFacilities()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setFacilityList(response);
@@ -364,7 +389,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getMyTrays()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setMyTrays(response);
@@ -389,7 +414,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getCaseTrayUses()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setTrayList(prev => response);
@@ -413,7 +438,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - addSurgeonToDB()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...surgeonList, response[0]];
@@ -440,7 +465,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - addFacilityToDB()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...facilityList, response[0]];
@@ -574,7 +599,7 @@ function CasePage () {
                       routes: [{ name: backTo.name, params: backTo.params }],
                     });
                 }
-            })q
+            })
         return response;
     }
 
@@ -905,7 +930,14 @@ function CasePage () {
                         </View>
                     </TouchableOpacity>
                 </View>
-                <Text allowFontScalling={false} style={styles.title}>Gallery:</Text>
+                <View style={styles.row}>
+                    <Text allowFontScalling={false} style={styles.title}>Gallery:</Text>
+                    <TouchableOpacity
+                        onPress={() => fetchImages()}
+                        >
+                        <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.08, height: width * 0.08,}}/>
+                    </TouchableOpacity>
+                </View>
                 <Image source={require('../../assets/icons/loading.gif')} style={loading}/>
                 <ScrollView
                     scrollEnabled={true}

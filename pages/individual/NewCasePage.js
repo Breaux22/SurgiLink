@@ -168,8 +168,8 @@ function CasePage () {
                     if (!response.ok){
                         console.error("Error - updateTrayLocation()")
                     }
-                    response.json()
-                }))
+                    return response.json()
+                })
         return;
     }
 
@@ -193,8 +193,8 @@ function CasePage () {
                     if (!response.ok){
                         console.error("Error - removeTrayFromCase()")
                     }
-                    response.json()
-                }))
+                    return response.json()
+                })
         return;
     }
 
@@ -221,7 +221,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getSurgeons()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setSurgeonList(response);
@@ -245,7 +245,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getFacilities()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setFacilityList(response);
@@ -269,7 +269,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getTrays()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setMyTrays(response);
@@ -294,7 +294,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - getCaseTrayUses()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         setTrayList(prev => response);
@@ -318,7 +318,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - addSurgeon()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...surgeonList, response[0]];
@@ -345,7 +345,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - addFacility()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...facilityList, response[0]];
@@ -435,7 +435,7 @@ function CasePage () {
                 if (!response.ok){
                     console.error("Error - addCase()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         navigation.reset({

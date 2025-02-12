@@ -49,7 +49,12 @@ function LoginPage () {
       'body': JSON.stringify(data)
     }
     const response = await fetch('https://surgiflow.replit.app/recoveryEmail', headers)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          console.error('Error - sendRecoveryEmail()')
+        }
+        return response.json()
+      })
       .then(data => {return data})
 
     if (response.myMessage == "Email Sent.") {
@@ -78,7 +83,12 @@ function LoginPage () {
       'body': JSON.stringify(data)
     }
     const response = await fetch('https://surgiflow.replit.app/login', headers)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          console.error('Error - login()')
+        }
+        return response.json()
+      })
       .then(data => {return data})
 
     if (response.myMessage == 'Incorrect Username/Password.') {
@@ -237,7 +247,7 @@ const styles = StyleSheet.create({
     width: width
   },
   forgot: {
-    marginTop: width * 0.05,
+    marginTop: width * 0.1,
     textAlign: "center",
   },
   signUp: {

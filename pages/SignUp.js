@@ -25,7 +25,6 @@ function SignUpPage () {
   const [usernameConflict, setUsernameConflict] = useState('');
   const [noMatch, setNoMatch] = useState('');
   const [choice, setChoice] = useState(styles.choice);
-  const [info, setInfo] = useState(styles.collapsed);
   const [plan, setPlan] = useState('');
   const [version, setVersion] = useState(styles.version1);
   const {myMemory, setMyMemory} = useMemory();
@@ -50,9 +49,13 @@ function SignUpPage () {
         'body': JSON.stringify(data)
       }
       const response = await fetch('https://surgiflow.replit.app/createUser', headers)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            console.error('Error - createUser()')
+          }
+          return response.json()
+        })
         .then(data => {return data})
-      console.log(response.myMessage)
       if (response.myMessage == 'Username Already In Use.') {
         setUsernameConflict('Username Already In Use.')
       } else {
@@ -63,21 +66,6 @@ function SignUpPage () {
       }
       return;
     }
-  }
-
-  async function showInfo (planChoice) {
-    setPlan(planChoice);
-    setChoice(styles.collapsed);
-    setInfo(styles.info);
-    setVersion(styles.version2);
-    return;
-  }
-
-  async function hideInfo () {
-    setChoice(styles.choice);
-    setInfo(styles.collapsed);
-    setVersion(styles.version1);
-    return;
   }
 
   return (
@@ -92,50 +80,9 @@ function SignUpPage () {
             });
           }}
           >
-          <Text allowFontScaling={false} style={styles.loginText}>Login</Text>
+          <Text allowFontScaling={false} style={styles.loginText}>Back to Login</Text>
         </TouchableOpacity>
-        <View style={choice}>
-          <View style={styles.choice1}>
-            <View style={styles.topBar}>
-              <Text allowFontScaling={false} style={styles.choiceName}>Individual</Text>
-            </View>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature A</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature B</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature C</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature D</Text>
-            <TouchableOpacity
-              style={styles.chooseButton}
-              onPress={() => {
-                showInfo('Individual');
-              }}
-              >
-              <Text allowFontScaling={false} style={styles.buttonText}>Choose This Plan</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.choice2}>
-            <Text allowFontScaling={false} style={styles.choiceName}>Business</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature A</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature B</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature C</Text>
-            <Text allowFontScaling={false} style={styles.feature}>- Feature D</Text>
-            <TouchableOpacity
-              style={styles.chooseButton}
-              onPress={() => {
-                //showInfo('Business');
-              }}
-              >
-              <Text allowFontScaling={false} style={styles.buttonText}>Coming Soon!</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={info}>
-          <TouchableOpacity
-            onPress={() => {
-              hideInfo();  
-            }}
-            >
-            <Text allowFontScaling={false} style={styles.back}>{'<'} Back to Choices</Text>
-          </TouchableOpacity>
+        <View style={styles.info}>
           <Text allowFontScaling={false} style={styles.planStyle}>You Chose: {plan}</Text>
           <View style={styles.row}>
             <Text allowFontScaling={false} style={styles.title}>Create Username:</Text>
@@ -216,9 +163,6 @@ const styles = StyleSheet.create({
     marginLeft: width * 0.15,
     marginBottom: width * 0.05
   },
-  topBar: {
-    
-  },
   planStyle: {
     textAlign: "center",
     fontSize: width * 0.05,
@@ -297,16 +241,16 @@ const styles = StyleSheet.create({
   },
   login: {
     backgroundColor: "#d6d6d7",
-    width: width * 0.3,
+    width: width * 0.4,
     height: width * 0.1,
     marginTop: width * 0.06,
-    marginLeft: width * 0.35,
+    marginLeft: width * 0.3,
     marginBottom: width * 0.1,
     borderRadius: 5
   },
   loginText: {
     fontSize: width * 0.06,
-    marginLeft: width * 0.07,
+    textAlign: "center",
     marginTop: width * 0.01
   },
   signUp: {

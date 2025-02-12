@@ -54,7 +54,7 @@ const MonthlyViewPage = () => {
                 if (!response.ok){
                     console.error("Error - verifySession()")
                 }
-                response.json()
+                return response.json()
             })
           .then(data => {return data})
     
@@ -86,8 +86,8 @@ const MonthlyViewPage = () => {
                     if (!response.ok){
                         console.error("Error - logout()")
                     }
-                    response.json()
-                }))
+                    return response.json()
+                })
         return
     }
 
@@ -162,7 +162,7 @@ const MonthlyViewPage = () => {
                 if (!response.ok){
                     console.error("Error - geCases()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {return data})
         const tempArr = [...response];

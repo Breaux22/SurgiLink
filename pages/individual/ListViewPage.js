@@ -64,7 +64,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - sessionVerify()")
                 }
-                response.json()
+                return response.json()
             })
           .then(data => {return data})
 
@@ -96,8 +96,8 @@ const ListPage = () => {
                     if (!response.ok){
                         console.error("Error - logout()")
                     }
-                    response.json()
-                }))
+                    return response.json()
+                })
         return
     }
 
@@ -119,7 +119,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - getSurgeons()")
                 }
-                response.json()
+                return response.json()
             })
         .then(data => {return data})
         setSurgeons(prev => response);
@@ -144,7 +144,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - getFacilities()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => setFacilities(prev => data))
         return
@@ -211,7 +211,7 @@ const ListPage = () => {
                 if (!response.ok){
                     console.error("Error - getCases()")
                 }
-                response.json()
+                return response.json()
             })
             .then(data => {
                 setCases(prev => data);

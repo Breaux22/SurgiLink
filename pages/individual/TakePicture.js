@@ -25,6 +25,7 @@ export default function CameraPage({ navigation, caseId }) {
   const [optionStyle, setOptionStyle] = useState(styles.row);
   const [loadingStyle, setLoadingStyle] = useState(false);
   const { myMemory, setMyMemory } = useMemory();
+  const keepRef = useRef(false);
 
   async function saveData (userInfo) {
       setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
@@ -80,14 +81,45 @@ export default function CameraPage({ navigation, caseId }) {
     }
   }
 
+  async function getCloudCreds () {
+      const data = {
+          userId: myMemory.userInfo.id,
+          sessionString: myMemory.userInfo.sessionString,
+      }
+      const headers = {
+          'method': 'POST',
+          'headers': {
+              'content-type': 'application/json',
+          },
+          'body': JSON.stringify(data)
+      }
+      const url = 'https://surgiflow.replit.app/getCloudinaryCreds';
+      const response = await fetch(url, headers)
+          .then(response => {
+              if (!response.ok) {
+                  console.error('Error - getCloudCreds()')
+              }
+              return response.json()
+          })
+          .then(data => {return data})
+      return response;
+  }
+
   async function saveImage() {
     try {
+      setShutterStyle(styles.snap);
+      setOptionStyle(styles.row);
+      setRetakeStyle(styles.collapsed);
+      setKeepStyle(styles.collapsed);
+      const myImage = image;
+      setImage(null);
+      const cloudCreds = await getCloudCreds();
       // Cloudinary unsigned upload URL
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/dxu39drpj/image/upload`;
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudCreds.cloud_name}/image/upload`;
       // Form data for Cloudinary upload
       const formData = new FormData();
       formData.append('file', {
-        uri: image,
+        uri: myImage,
         type: 'image/jpeg', // You can adjust this based on your image type
         name: `${myCaseId}_${JSON.stringify(new Date())}.jpg`,   // Change the filename if needed
       });
@@ -101,12 +133,6 @@ export default function CameraPage({ navigation, caseId }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      setShutterStyle(styles.snap);
-      setOptionStyle(styles.row);
-      setRetakeStyle(styles.collapsed);
-      setKeepStyle(styles.collapsed);
-      setImage(null);
     } catch (error) {
       console.error('Error uploading image:', error);
     }

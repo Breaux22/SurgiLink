@@ -80,7 +80,7 @@ function SettingsPage () {
               if (!response.ok){
                   console.error("Error - verifySession()")
               }
-              response.json()
+              return response.json()
           })
           .then(data => {return data})
   
@@ -112,8 +112,8 @@ function SettingsPage () {
                 if (!response.ok){
                     console.error("Error - logout()")
                 }
-                response.json()
-            }))
+                return response.json()
+            })
         return
     }
 
@@ -228,7 +228,7 @@ function SettingsPage () {
               if (!response.ok){
                   console.error("Error - getSurgeons()")
               }
-              response.json()
+              return response.json()
           })
             .then(data => {return data})
         var tempArr = response.map((surg) => ({ id: surg.id, name: surg.surgeonName, myState: false, editStyle: styles.edit, nameStyle: styles.surgeonText, inputStyle: styles.collapsed }));
@@ -255,7 +255,7 @@ function SettingsPage () {
               if (!response.ok){
                   console.error("Error - getFacilities()")
               }
-              response.json()
+              return response.json()
           })
             .then(data => {return data})
         var tempArr = response.map((facil) => ({ id: facil.id, name: facil.facilityName, myState: false, editStyle: styles.edit, nameStyle: styles.facilityText, inputStyle: styles.collapsed }));
@@ -282,7 +282,7 @@ function SettingsPage () {
               if (!response.ok){
                   console.error("Error - getTrays()")
               }
-              response.json()
+              return response.json()
           })
             .then(data => {return data})
         var tempArr = response.map((tray) => ({ name: tray.trayName, myState: false, editStyle: styles.edit, nameStyle: styles.trayText, inputStyle: styles.collapsed }));
