@@ -12,6 +12,7 @@ import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,6 +35,9 @@ function LoginPage () {
 
   async function saveData (userInfo) {
     setMyMemory((prev) => ({ ...prev, userInfo: userInfo }));
+    await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo), {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY, // iOS security setting
+    });
     return;
   };
 
@@ -82,7 +86,9 @@ function LoginPage () {
       },
       'body': JSON.stringify(data)
     }
-    const response = await fetch('https://surgiflow.replit.app/login', headers)
+    //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/login'
+    const url = 'https://surgiflow.replit.app/login'
+    const response = await fetch(url, headers)
       .then(response => {
         if (!response.ok) {
           console.error('Error - login()')
@@ -95,17 +101,10 @@ function LoginPage () {
       setConflict('Incorrect Username/Password.')
     } else {
         await saveData(response.userInfo);
-        if (response.userInfo.plan == "Individual") {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Monthly View", params: {month: new Date().getMonth(), year: new Date().getFullYear()} }],
-          });
-        } else if (response.userInfo.plan == "Business") {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Business Monthly View", params: {month: new Date().getMonth(), year: new Date().getFullYear()} }],
-          });
-        }
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Monthly View", params: {month: new Date().getMonth(), year: new Date().getFullYear()} }],
+        });
     }
     return;
   }

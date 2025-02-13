@@ -403,6 +403,7 @@ const ListPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/30-days.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Monthly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -414,6 +415,7 @@ const ListPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/week-calendar.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Weekly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -422,6 +424,7 @@ const ListPage = () => {
                         closeMenu();
                       }}
                       >
+                        <Image source={require('../../assets/icons/clipboard.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Case List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -433,6 +436,7 @@ const ListPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/baking-tray.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Tray List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -444,6 +448,7 @@ const ListPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/settings.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Settings</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -456,6 +461,7 @@ const ListPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/logout.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
@@ -925,19 +931,6 @@ const ListPage = () => {
           position: "absolute", 
           marginLeft: width * 0.7
       },
-      option: {
-            backgroundColor: "rgba(0, 122, 255, 0.8)",
-            width: width * 0.4,
-            height: width * 0.09,
-            marginBottom: width * 0.02,
-            borderRadius: 5
-      },
-      optionText: {
-            color: "#fff",
-            fontSize: width * 0.06,
-            marginTop: width * 0.0075,
-            textAlign: "center"
-      },
       menuButtons: {
           borderBottomWidth: width * 0.002,
           borderBottomColor: "#cfcfcf",
@@ -963,13 +956,16 @@ const ListPage = () => {
             marginLeft: width * 0.02,
             marginTop: width * 0.04,
             marginBottom: width * 0.02,
-            borderBottomWidth: 1,
-            borderRadius: 5
+
+            borderRadius: 5,
+          flexDirection: "row",
       },
       optionText: {
             fontSize: width * 0.06,
             marginTop: width * 0.0075,
-            textAlign: "center"
+            marginLeft: width * 0.02,
+            textAlign: "center",
+          borderBottomWidth: 1,
       },
 });
 

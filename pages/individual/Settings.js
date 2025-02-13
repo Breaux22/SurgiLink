@@ -12,6 +12,7 @@ import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,10 +58,28 @@ function SettingsPage () {
     const [stats3, setStats3] = useState(styles.collapsed);
     const navigation = useNavigation();
     const { myMemory, setMyMemory } = useMemory();
-
+    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
+    const [existingPassword, setExistingPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [newPassStyle, setNewPassStyle] = useState(false);
+    const [accountDetails1, setAccountDetails1] = useState(styles.collapsed);
+    const [accountDetails2, setAccountDetails2] = useState(styles.row);
+    const [accountDetails3, setAccountDetails3] = useState(styles.accountDetails);
+    const [showDelete, setShowDelete] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [passCheck, setPassCheck] = useState('');
+  
     async function saveData (userInfo) {
         setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
     };
+
+    useEffect(() => {
+      (async () => {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+        userInfo && [setEmail(userInfo.email), setUsername(userInfo.username)]
+      })();
+    },[])
 
     async function sessionVerify () {
         const data = {
@@ -75,7 +94,8 @@ function SettingsPage () {
           },
           'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
+        const url = 'https://surgiflow.replit.app/verifySession';
+        const response = await fetch(url, headers)
           .then(response => {
               if (!response.ok){
                   console.error("Error - verifySession()")
@@ -92,6 +112,8 @@ function SettingsPage () {
         }
         return;
     }
+
+  
   
     async function logout () {
         const data = {
@@ -115,6 +137,37 @@ function SettingsPage () {
                 return response.json()
             })
         return
+    }
+
+    async function deleteUser () {
+      const data = {
+        userId: myMemory.userInfo.id,
+        sessionString: myMemory.userInfo.sessionString,
+        password: passCheck,
+        username: myMemory.userInfo.username,
+      }
+      const headers = {        
+        'method': 'POST',         
+        'headers': {
+            'content-type': 'application/json'
+            },
+        'body': JSON.stringify(data),
+      }
+      const url = 'https://surgiflow.replit.app/deleteUser';
+      const response = await fetch(url, headers)
+        .then(response => {
+          if (!response.ok){
+            console.error('Error - deleteAccount()');
+          } else {
+            navigation.reset({
+              index: 0,
+              routes: [{
+                name: "Login",
+                params: {}
+              }]
+            })
+          }
+        })
     }
 
     async function openMenu() {
@@ -475,6 +528,7 @@ function SettingsPage () {
                   });
                 }}
                 >
+                <Image source={require('../../assets/icons/30-days.png')} style={styles.icon3}/>
                   <Text allowFontScaling={false} style={styles.optionText}>Monthly View</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -486,6 +540,7 @@ function SettingsPage () {
                   });
                 }}
                 >
+                <Image source={require('../../assets/icons/week-calendar.png')} style={styles.icon3}/>
                   <Text allowFontScaling={false} style={styles.optionText}>Weekly View</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -497,6 +552,7 @@ function SettingsPage () {
                   });
                 }}
                 >
+                <Image source={require('../../assets/icons/clipboard.png')} style={styles.icon3}/>
                   <Text allowFontScaling={false} style={styles.optionText}>Case List</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -508,6 +564,7 @@ function SettingsPage () {
                   });
                 }}
                 >
+                <Image source={require('../../assets/icons/baking-tray.png')} style={styles.icon3}/>
                   <Text allowFontScaling={false} style={styles.optionText}>Tray List</Text>
               </TouchableOpacity>
             <TouchableOpacity
@@ -516,6 +573,7 @@ function SettingsPage () {
                 closeMenu();
               }}
               >
+              <Image source={require('../../assets/icons/settings.png')} style={styles.icon3}/>
                 <Text allowFontScaling={false} style={styles.optionText}>Settings</Text>
             </TouchableOpacity>
               <TouchableOpacity
@@ -528,18 +586,245 @@ function SettingsPage () {
                   });
                 }}
                 >
+                <Image source={require('../../assets/icons/logout.png')} style={styles.icon3}/>
                   <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
               </TouchableOpacity>
           </View>
           <View style={backBlur}></View>
         </View>
         <ScrollView>
+          <View style={accountDetails1}>
+            <Text allowFontScaling={false} style={styles.title}>Account:</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setAccountDetails1(styles.collapsed);
+                setAccountDetails2(styles.row);
+                setAccountDetails3(styles.accountDetails);
+              }}
+              >
+              <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
+            </TouchableOpacity>
+          </View>
+          <View style={accountDetails2}>
+            <Text allowFontScaling={false} style={styles.title}>Account:</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setAccountDetails1(styles.row);
+                setAccountDetails2(styles.collapsed);
+                setAccountDetails3(styles.collapsed);
+                setNewPassStyle(false);
+              }}
+              >
+              <Image source={require('../../assets/icons/minus.png')} style={styles.icon}/>
+            </TouchableOpacity>
+          </View>
+          <View style={accountDetails3}>
+            <View style={styles.row}>
+              <Text allowFontScaling={false} style={{
+                width: width * 0.18,
+              }}>Email:</Text>
+              <Text allowFontScaling={false} style={{
+                fontSize: width * 0.05,
+                marginLeft: width * 0.02,
+        marginBottom: width * 0.04,
+              }}>{email}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text allowFontScaling={false}>Username:</Text>
+              <Text allowFontScaling={false} style={{
+                  fontSize: width * 0.05,
+                  marginLeft: width * 0.02,
+        marginBottom: width * 0.04,
+                }}>{username}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text allowFontScaling={false}>Password:</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log(newPassStyle)
+                  setNewPassStyle(!newPassStyle);
+                }}
+                >
+                <Text allowFontScaling={false} style={{
+                    borderBottomWidth: width * 0.003,
+                    width: width * 0.4,
+                    color: "#007AFF",
+                    borderColor: "#007AFF",
+                    marginLeft: width * 0.03,
+                    fontSize: width * 0.05,
+                    marginBottom: width * 0.04,
+                }}>Change Password</Text>
+              </TouchableOpacity>
+            </View>
+            {newPassStyle && <View>
+              <TextInput 
+                style={{
+                  width: width * 0.92,
+                  height: width * 0.1,
+                  backgroundColor: "#ededed",
+                  borderRadius: 5,
+                  borderWidth: width * 0.002,
+                  marginBottom: width * 0.02,
+                  fontSize: width * 0.05,
+                  padding: width * 0.01,
+                }}
+                secureTextEntry={true}
+                allowFontScaling={false}
+                value={existingPassword}
+                placeholder={'Enter Existing Password.'}
+                onChangeText={(input) => setExistingPassword(input)}
+                />
+              <TextInput 
+                style={{
+                  width: width * 0.92,
+                  height: width * 0.1,
+                  backgroundColor: "#ededed",
+                  borderRadius: 5,
+                  borderWidth: width * 0.002,
+                  marginBottom: width * 0.02,
+                  fontSize: width * 0.05,
+                  padding: width * 0.01,
+                }}
+                secureTextEntry={true}
+                allowFontScaling={false}
+                value={newPassword}
+                placeholder={'Enter New Password.'}
+                onChangeText={(input) => setNewPassword(input)}
+                />
+              <TextInput 
+                style={{
+                  width: width * 0.92,
+                  height: width * 0.1,
+                  backgroundColor: "#ededed",
+                  borderRadius: 5,
+                  borderWidth: width * 0.002,
+                  fontSize: width * 0.05,
+                  padding: width * 0.01,
+                }}
+                secureTextEntry={true}
+                allowFontScaling={false}
+                value={newPassword}
+                placeholder={'Confirm New Password.'}
+                onChangeText={(input) => setNewPassword(input)}
+                />
+              <TouchableOpacity
+                onPress={() => {
+                  setNewPassStyle(false);
+                  // save new password if new passes match and old password is correct
+                }}
+                >
+                <Text allowFontScaling={false} style={{
+                  fontSize: width * 0.05,
+                  width: width * 0.15,
+                  height: width * 0.08,
+                  borderRadius: 5,
+                  backgroundColor: "#d6d6d7",
+                  paddingLeft: width * 0.025,
+                  paddingTop: width * 0.008,
+                  marginTop: width * 0.02,
+                  marginLeft: width * 0.77,
+                }}>Save</Text>
+              </TouchableOpacity>
+            </View>}
+            <TouchableOpacity
+              onPress={() => setShowDelete(true)}
+              >
+              <Text allowFontScaling={false} style={{
+                color: "#E61212",
+                fontSize: width * 0.05,
+                borderBottomWidth: width * 0.002,
+                width: width * 0.43,
+                borderBottomColor: "#e61212",
+                marginBottom: width * 0.02,
+              }}>Delete My Account</Text>
+            </TouchableOpacity>
+          </View>
+          {showDelete && <View>
+              <Text allowFontScalling={false} style={{
+                  fontSize: width * 0.06,
+                  width: width * 0.9,
+                  height: width * 0.25,
+                  marginLeft: width * 0.04,
+                  textAlign: "justify",
+                }}>Are you sure you want to delete your account? All of your data will be permanently deleted!</Text>
+              <View style={styles.row}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowDelete(false);
+                    setConfirmDelete(false);
+                    setPassCheck('');
+                  }}
+                  >
+                  <Text allowFontScaling={false}
+                    style={{
+                      textAlign: "center",
+                      width: width * 0.24,
+                      height: width * 0.1,
+                      backgroundColor: "#d6d6d7",
+                      marginLeft: width * 0.02,
+                      borderRadius: 5,
+                      fontSize: width * 0.05,
+                      paddingTop: width * 0.02
+                    }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setConfirmDelete(true)}
+                  >
+                  <Text allowFontScaling={false}
+                    style={{
+                      textAlign: "center",
+                      width: width * 0.24,
+                      height: width * 0.1,
+                      color: "#fff",
+                      backgroundColor: "#f25c5c",
+                      marginLeft: width * 0.02,
+                      borderRadius: 5,
+                      fontSize: width * 0.05,
+                      paddingTop: width * 0.02
+                    }}>Continue</Text>
+                </TouchableOpacity>
+              </View>
+          </View>}
+          {confirmDelete && <View style={[styles.row, {marginTop: width * 0.04,}]}>
+            <TextInput 
+              style={{
+                width: width * 0.7,
+                height: width * 0.1,
+                marginLeft: width * 0.02,
+                backgroundColor: "#ededed",
+                borderRadius: 5,
+                borderWidth: width * 0.002,
+                padding: width * 0.01,
+                fontSize: width * 0.04,
+              }}
+              secureTextEntry={true}
+              allowFontScaling={false}
+              value={passCheck}
+              placeholder={"Enter Password to Delete Account"}
+              onChangeText={(input) => setPassCheck(input)}
+              />
+            <TouchableOpacity
+              // try delete account
+                onPress={() => deleteUser()}
+              >
+              <Text allowFontScaling={false} style={{
+                textAlign: "center",
+                width: width * 0.24,
+                height: width * 0.1,
+                color: "#fff",
+                backgroundColor: "#f25c5c",
+                marginLeft: width * 0.02,
+                borderRadius: 5,
+                fontSize: width * 0.04
+              }}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>}
           <View style={surgeons1}>
             <Text allowFontScaling={false} style={styles.title}>Edit Surgeons:</Text>
             <TouchableOpacity
               onPress={() => {
                 setSurgeons1(styles.collapsed);
-                setSurgeons2(styles.row);
+                setSurgeons2([styles.row, {marginBottom: width * 0.02}]);
                 setSurgeons3(styles.editBox)
               }}
               >
@@ -584,7 +869,7 @@ function SettingsPage () {
               </TouchableOpacity>
             </View>
             {surgeonList.map((surgeon, index) => {
-              return (
+              if (index != 0) {return (
                 <View key={surgeon.surgeonName + index} style={styles.row}>
                   <View style={surgChecklist[index].nameStyle}>
                     <Checkbox
@@ -622,7 +907,7 @@ function SettingsPage () {
                     <Text allowFontScaling={false} style={surgChecklist[index].editStyle}>- Edit</Text>
                   </TouchableOpacity>
                 </View>
-              )
+              )}
             })}
           </ScrollView>
           <View style={facil1}>
@@ -630,7 +915,7 @@ function SettingsPage () {
             <TouchableOpacity
               onPress={() => {
                 setFacil1(styles.collapsed);
-                setFacil2(styles.row);
+                setFacil2([styles.row, {marginBottom: width * 0.02}]);
                 setFacil3(styles.editBox)
               }}
               >
@@ -675,7 +960,7 @@ function SettingsPage () {
               </TouchableOpacity>
             </View>
             {facilityList.map((facility, index) => {
-              return (
+              if (index != 0) {return (
                 <View key={facility.facilityName + index} style={styles.row}>
                   <View style={facilChecklist[index].nameStyle}>
                     <Checkbox
@@ -713,7 +998,7 @@ function SettingsPage () {
                     <Text allowFontScaling={false} style={facilChecklist[index].editStyle}>- Edit</Text>
                   </TouchableOpacity>
                 </View>
-              )
+              )}
             })}
           </ScrollView>
           <View style={trays1}>
@@ -721,7 +1006,7 @@ function SettingsPage () {
             <TouchableOpacity
               onPress={() => {
                 setTrays1(styles.collapsed);
-                setTrays2(styles.row);
+                setTrays2([styles.row, {marginBottom: width * 0.02}]);
                 setTrays3(styles.editBox)
               }}
               >
@@ -933,15 +1218,21 @@ const styles = StyleSheet.create({
       marginLeft: width * 0.02,
       marginTop: width * 0.04,
       marginBottom: width * 0.02,
-      borderBottomWidth: 1,
-      borderRadius: 5
+      borderRadius: 5,
+      flexDirection: "row",
   },
   optionText: {
       //color: "#fff",
       fontSize: width * 0.06,
       marginTop: width * 0.0075,
-      textAlign: "center"
+      textAlign: "center",
+      borderBottomWidth: width * 0.002,
+      marginLeft: width * 0.02,
   },
+  accountDetails: {
+      marginLeft: width * 0.04,
+      marginTop: width * 0.04,
+  }
 });
 
 export default SettingsPage;

@@ -439,6 +439,7 @@ const WeeklyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/30-days.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Monthly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -447,6 +448,7 @@ const WeeklyViewPage = () => {
                         closeMenu();
                       }}
                       >
+                        <Image source={require('../../assets/icons/week-calendar.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Weekly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -464,6 +466,7 @@ const WeeklyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/clipboard.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Case List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -481,6 +484,7 @@ const WeeklyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/baking-tray.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Tray List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -498,6 +502,7 @@ const WeeklyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/settings.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Settings</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -510,6 +515,7 @@ const WeeklyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/logout.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
@@ -654,14 +660,16 @@ const styles = StyleSheet.create({
         marginLeft: width * 0.02,
         marginTop: width * 0.04,
         marginBottom: width * 0.02,
-        borderBottomWidth: 1,
-        borderRadius: 5
+        borderRadius: 5,
+        flexDirection: "row",
     },
     optionText: {
         //color: "#fff",
         fontSize: width * 0.06,
         marginTop: width * 0.0075,
-        textAlign: "center"
+        textAlign: "center",
+        borderBottomWidth: width * 0.002,
+        marginLeft: width * 0.02,
     },
 });
 

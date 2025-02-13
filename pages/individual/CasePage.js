@@ -83,7 +83,7 @@ function CasePage () {
             setSurgeonStyle(styles.collapsed);
             setMftStyle(styles.collapsed);
             setFacilityStyle(styles.collapsed);
-        }, 3000);
+        }, 2500);
     };
     
     async function saveData (userInfo) {
@@ -526,7 +526,9 @@ function CasePage () {
     useFocusEffect(
         useCallback(() => {
           const runOnFocus = () => {
-            fetchImages();
+            setTimeout(() => {
+                fetchImages();
+            }, 2000)
           };
           runOnFocus();
           return () => {
@@ -740,6 +742,9 @@ function CasePage () {
                 <Text allowFontScaling={false} style={styles.title}>Surgeon Name:</Text>
                 <TouchableOpacity style={styles.textBox} onPress={() => {
                     if (surgeonStyle == styles.collapsed) {
+                        if (collapseTimeout.current) {
+                            clearTimeout(collapseTimeout.current);
+                        }
                         setSurgeonStyle(styles.container);
                     } else {
                         if (surgeonText == "...") {
@@ -826,6 +831,9 @@ function CasePage () {
                 <Text allowFontScaling={false} style={styles.title}>Facility Name:</Text>
                 <TouchableOpacity style={styles.textBox} onPress={() => {
                     if (facilityStyle == styles.collapsed) {
+                        if (collapseTimeout.current) {
+                            clearTimeout(collapseTimeout.current);
+                        }
                         setFacilityStyle(styles.container);
                     } else {
                         if (facilityText == "...") {

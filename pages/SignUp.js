@@ -48,7 +48,9 @@ function SignUpPage () {
         },
         'body': JSON.stringify(data)
       }
-      const response = await fetch('https://surgiflow.replit.app/createUser', headers)
+      //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/createUser';
+      const url = 'https://surgiflow.replit.app/createUser'
+      const response = await fetch(url, headers)
         .then(response => {
           if (!response.ok) {
             console.error('Error - createUser()')
@@ -56,6 +58,7 @@ function SignUpPage () {
           return response.json()
         })
         .then(data => {return data})
+      console.log(response)
       if (response.myMessage == 'Username Already In Use.') {
         setUsernameConflict('Username Already In Use.')
       } else {

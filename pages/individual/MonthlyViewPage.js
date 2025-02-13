@@ -175,7 +175,7 @@ const MonthlyViewPage = () => {
         return (
             <View style={{height: width * 0.2, overflow: "hidden"}}>
                 {caseList.map((item, index) => (
-                    <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
+                    <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", height: width * 0.031, width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
                         <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName.slice(0,10) : "Surgeon?"}</Text>
                     </View>
                 ))}
@@ -424,6 +424,7 @@ const MonthlyViewPage = () => {
                         closeMenu();
                       }}
                       >
+                        <Image source={require('../../assets/icons/30-days.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Monthly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -435,6 +436,7 @@ const MonthlyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/week-calendar.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Weekly View</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -446,6 +448,7 @@ const MonthlyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/clipboard.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Case List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -457,6 +460,7 @@ const MonthlyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/baking-tray.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Tray List</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -468,6 +472,7 @@ const MonthlyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/settings.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Settings</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -480,6 +485,7 @@ const MonthlyViewPage = () => {
                         });
                       }}
                       >
+                        <Image source={require('../../assets/icons/logout.png')} style={styles.icon3}/>
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
@@ -783,14 +789,16 @@ const styles = StyleSheet.create({
         marginLeft: width * 0.02,
         marginTop: width * 0.04,
         marginBottom: width * 0.02,
-        borderBottomWidth: width * 0.003,
-        borderRadius: 5
+        borderRadius: 5,
+        flexDirection: "row",
     },
     optionText: {
         //color: "#fff",
         fontSize: width * 0.06,
         marginTop: width * 0.0075,
-        textAlign: "center"
+        textAlign: "center",
+        borderBottomWidth: width * 0.003,
+        marginLeft: width * 0.02,
     },
   });
 
