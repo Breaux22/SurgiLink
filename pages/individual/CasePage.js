@@ -12,6 +12,7 @@ import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,6 +64,11 @@ function CasePage () {
     const scrollViewRef = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
     const firstLoad = useRef(true);
+
+    async function getSecureStorage (name) {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync(name));
+        return userInfo;
+    }
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -162,9 +168,10 @@ function CasePage () {
     }, [loadBar]);
 
     async function getCloudCreds () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -252,11 +259,12 @@ function CasePage () {
     };
 
     async function updateLoanerName (tray) {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             trayId: tray.trayId,
             newName: tray.trayName,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -274,11 +282,12 @@ function CasePage () {
     }
 
     async function updateTrayLocation (tray) {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             trayId: tray.id,
             location: tray.location,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -298,11 +307,12 @@ function CasePage () {
     }
 
     async function removeTrayFromCase (tray) {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             trayId: tray.id,
             caseId: caseId,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -327,9 +337,10 @@ function CasePage () {
     }
 
     async function getSurgeons() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -351,9 +362,10 @@ function CasePage () {
     }
 
     async function getFacilities() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -375,9 +387,10 @@ function CasePage () {
     }
 
     async function getMyTrays() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -399,10 +412,11 @@ function CasePage () {
     }
 
     async function getCaseTrayUses () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             caseId: caseId,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -424,10 +438,11 @@ function CasePage () {
     }
 
     async function addSurgeonToDB() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             surgeonName: surgeonText,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -451,10 +466,11 @@ function CasePage () {
     }
 
     async function addFacilityToDB() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             facilityName: facilityText,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -480,8 +496,8 @@ function CasePage () {
       async function addLoanerToDB() {
           const data = {
               trayName: loanerName,
-              userId: myMemory.userInfo.id,
-              sessionString: myMemory.userInfo.sessionString,
+              userId: userInfo.id,
+              sessionString: userInfo.sessionString,
           }
           const headers = {
               'method': 'POST',
@@ -500,10 +516,11 @@ function CasePage () {
       }
 
     async function deleteCase() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             caseId: caseId,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -573,7 +590,7 @@ function CasePage () {
                 tempArr2.push(item.id);
             }
         })
-        console.log("TL: ", trayList)
+        const userInfo = await getSecureStorage('userInfo');
         const caseData = {
             caseId: caseId,
             dateString: new Date(surgdate - (1000*60*60*8)),
@@ -584,8 +601,8 @@ function CasePage () {
             hosp: tempArr2[0],
             notes: notes,
             trayList: JSON.stringify(trayList),
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

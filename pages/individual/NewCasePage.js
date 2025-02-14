@@ -12,6 +12,7 @@ import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -204,9 +205,10 @@ function CasePage () {
     }
 
     async function getSurgeons() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -228,9 +230,10 @@ function CasePage () {
     }
 
     async function getFacilities() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -252,9 +255,10 @@ function CasePage () {
     }
 
     async function getMyTrays() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -301,10 +305,11 @@ function CasePage () {
     }*/
 
     async function addSurgeonToDB() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             surgeonName: surgeonText,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -328,10 +333,11 @@ function CasePage () {
     }
 
     async function addFacilityToDB() {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             facilityName: facilityText,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -355,10 +361,11 @@ function CasePage () {
     }
 
       async function addLoanerToDB() {
+          const userInfo = await getSecureStorage('userInfo');
           const data = {
               trayName: loanerName,
-              userId: myMemory.userInfo.id,
-              sessionString: myMemory.userInfo.sessionString,
+              userId: userInfo.id,
+              sessionString: userInfo.sessionString,
           }
           const headers = {
               'method': 'POST',
@@ -410,6 +417,7 @@ function CasePage () {
                 tempArr2.push(item.id);
             }
         })
+        const userInfo = await getSecureStorage('userInfo');
         const caseData = {
             dateString: new Date(surgdate - (1000*60*60*8)),
             surgDate: new Date(surgdate - (1000*60*60*8)),
@@ -419,8 +427,8 @@ function CasePage () {
             hosp: tempArr2[0],
             notes: notes,
             trayList: JSON.stringify(trayList),
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

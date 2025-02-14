@@ -10,6 +10,7 @@ import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,10 +53,11 @@ const ListPage = () => {
     }
 
     async function sessionVerify () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-          username: myMemory.userInfo.username,
-          sessionString: myMemory.userInfo.sessionString,
-          userId: myMemory.userId.id,
+          username: userInfo.username,
+          sessionString: userInfo.sessionString,
+          userId: userId.id,
         }
         const headers = {
           'method': 'POST',
@@ -83,10 +85,11 @@ const ListPage = () => {
     }
 
     async function logout () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            username: myMemory.userInfo.username,
-            sessionString: myMemory.userInfo.sessionString,
-            userId: myMemory.userInfo.id
+            username: userInfo.username,
+            sessionString: userInfo.sessionString,
+            userId: userInfo.id
         }
         const headers = {
             'method': 'POST',
@@ -148,9 +151,10 @@ const ListPage = () => {
     }
 
     async function addTray () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
             trayName: newTrayText,
         }
         const headers = {
@@ -173,9 +177,10 @@ const ListPage = () => {
     }
 
     async function getTrays () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -200,9 +205,10 @@ const ListPage = () => {
     }
 
     async function getTrayUses () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -227,10 +233,11 @@ const ListPage = () => {
     }
 
     async function updateTrayLocation (index) {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             trayId: currTrayObj.id,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
             location: location
         }
         const headers = {
@@ -254,11 +261,12 @@ const ListPage = () => {
     }
 
     async function updateTrayName () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             trayId: currTrayObj.id,
             newName: currTray,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

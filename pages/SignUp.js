@@ -11,7 +11,7 @@ import HeaderMenu from '../components/HeaderMenu/HeaderMenu';
 import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../MemoryContext';
+// no need secure storage
 
 const { width, height } = Dimensions.get('window');
 

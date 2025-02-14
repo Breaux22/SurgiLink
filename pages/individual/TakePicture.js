@@ -8,6 +8,7 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { Cloudinary } from "@cloudinary/url-gen";
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -82,9 +83,10 @@ export default function CameraPage({ navigation, caseId }) {
   }
 
   async function getCloudCreds () {
+    const userInfo = await getSecureStorage('userInfo');
       const data = {
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
       }
       const headers = {
           'method': 'POST',

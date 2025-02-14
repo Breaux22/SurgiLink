@@ -12,6 +12,7 @@ import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,10 +38,11 @@ const MonthlyViewPage = () => {
     };
 
     async function sessionVerify () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-          username: myMemory.userInfo.username,
-          sessionString: myMemory.userInfo.sessionString,
-          userId: myMemory.userInfo.id,
+          username: userInfo.username,
+          sessionString: userInfo.sessionString,
+          userId: userInfo.id,
         }
         const headers = {
           'method': 'POST',
@@ -68,10 +70,11 @@ const MonthlyViewPage = () => {
     }
 
     async function logout () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            username: myMemory.userInfo.username,
-            sessionString: myMemory.userInfo.sessionString,
-            userId: myMemory.userInfo.id
+            username: userInfo.username,
+            sessionString: userInfo.sessionString,
+            userId: userInfo.id
         }
         const headers = {
             'method': 'POST',
@@ -142,11 +145,12 @@ const MonthlyViewPage = () => {
     }
 
     async function getCases (year, months) {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
             surgYear: year,
             months: months,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',

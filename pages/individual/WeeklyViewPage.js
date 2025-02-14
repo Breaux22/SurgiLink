@@ -8,6 +8,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import DailyViewCase from '../../components/DailyViewCase/DailyViewCase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useMemory } from '../../MemoryContext';
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,10 +51,11 @@ const WeeklyViewPage = () => {
     };
 
     async function sessionVerify () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-          username: myMemory.userInfo.username,
-          sessionString: myMemory.userInfo.sessionString,
-          userId: myMemory.userInfo.id,
+          username: userInfo.username,
+          sessionString: userInfo.sessionString,
+          userId: userInfo.id,
         }
         const headers = {
           'method': 'POST',
@@ -81,10 +83,11 @@ const WeeklyViewPage = () => {
     }
 
     async function logout () {
+        const userInfo = await getSecureStorage('userInfo');
         const data = {
-            username: myMemory.userInfo.username,
-            sessionString: myMemory.userInfo.sessionString,
-            userId: myMemory.userInfo.id,
+            username: userInfo.username,
+            sessionString: userInfo.sessionString,
+            userId: userInfo.id,
         }
         const headers = {
             'method': 'POST',
@@ -143,14 +146,15 @@ const WeeklyViewPage = () => {
       }
 
     async function getCases () {
+        const userInfo = await getSecureStorage('userInfo');
         let monthArr = [];
         if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth() + 1]}
         else {monthArr = [weekStart.getMonth() + 1, new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth() + 1]}
         const data = {
             surgYear: weekStart.getFullYear(),
             months: monthArr,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             "method": "POST",

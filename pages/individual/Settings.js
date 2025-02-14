@@ -85,10 +85,11 @@ function SettingsPage () {
     },[])
 
     async function sessionVerify () {
+      const userInfo = await getSecureStorage('userInfo');
         const data = {
-          username: myMemory.userInfo.username,
-          sessionString: myMemory.userInfo.sessionString,
-          userId: myMemory.userInfo.id,
+          username: userInfo.username,
+          sessionString: userInfo.sessionString,
+          userId: userInfo.id,
         }
         const headers = {
           'method': 'POST',
@@ -119,10 +120,11 @@ function SettingsPage () {
   
   
     async function logout () {
+      const userInfo = await getSecureStorage('userInfo');
         const data = {
-            username: myMemory.userInfo.username,
-            sessionString: myMemory.userInfo.sessionString,
-            userId: myMemory.userInfo.id,
+            username: userInfo.username,
+            sessionString: userInfo.sessionString,
+            userId: userInfo.id,
         }
         const headers = {
             'method': 'POST',
@@ -143,11 +145,12 @@ function SettingsPage () {
     }
 
     async function deleteUser () {
+      const userInfo = await getSecureStorage('userInfo');
       const data = {
-        userId: myMemory.userInfo.id,
-        sessionString: myMemory.userInfo.sessionString,
+        userId: userInfo.id,
+        sessionString: userInfo.sessionString,
         password: passCheck,
-        username: myMemory.userInfo.username,
+        username: userInfo.username,
       }
       const headers = {        
         'method': 'POST',         
@@ -189,10 +192,11 @@ function SettingsPage () {
 
     async function deleteItems (list, url, setDeleteNum, follow) {
       const items = await list.filter((obj) => obj.myState === true);
+      const userInfo = await getSecureStorage('userInfo');
       const caseData = {
         items: items,
-        userId: myMemory.userInfo.id,
-        sessionString: myMemory.userInfo.sessionString,
+        userId: userInfo.id,
+        sessionString: userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -214,29 +218,30 @@ function SettingsPage () {
     };
 
     async function addItem (param, item, url, follow) {
+      const userInfo = await getSecureStorage('userInfo');
       let caseData;
       if (param === 'surgeonName') {
         caseData = { 
           surgeonName: item,
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString, };
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString, };
       } else if (param === 'facilityName') {
         caseData = { 
           facilityName: item, 
-          userId: myMemory.userInfo.id, 
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id, 
+          sessionString: userInfo.sessionString,
         };
       } else if (param === 'trayName') {
         caseData = {
           trayName: item,
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
         };
       } else if (param === 'status') {
         caseData = {
           status: item,
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
         };
       }
       const headers = {
@@ -267,9 +272,10 @@ function SettingsPage () {
     }
   
     async function getSurgeons() {
+      const userInfo = await getSecureStorage('userInfo');
         const data = {
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -294,9 +300,10 @@ function SettingsPage () {
     }
 
     async function getFacilities() {
+      const userInfo = await getSecureStorage('userInfo');
         const data = {
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -321,9 +328,10 @@ function SettingsPage () {
     }
 
     async function getTrays() {
+      const userInfo = await getSecureStorage('userInfo');
         const data = {
-          userId: myMemory.userInfo.id,
-          sessionString: myMemory.userInfo.sessionString,
+          userId: userInfo.id,
+          sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -383,11 +391,12 @@ function SettingsPage () {
     }
 
     async function updateSurgeon (prevName, index) {
+      const userInfo = await getSecureStorage('userInfo');
       const caseData = {
         prevName: prevName,
         newName: surgUpdate,
-        userId: myMemory.userInfo.id,
-        sessionString: myMemory.userInfo.sessionString,
+        userId: userInfo.id,
+        sessionString: userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -409,11 +418,12 @@ function SettingsPage () {
     }
 
     async function updateFacility (prevName, index) {
+      const userInfo = await getSecureStorage('userInfo');
       const caseData = {
         prevName: prevName,
         newName: facilUpdate,
-        userId: myMemory.userInfo.id,
-        sessionString: myMemory.userInfo.sessionString,
+        userId: userInfo.id,
+        sessionString: userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
@@ -435,11 +445,12 @@ function SettingsPage () {
     }
 
     async function updateTray (tray, index) {
+      const userInfo = await getSecureStorage('userInfo');
       const caseData = {
         trayId: tray.id,
         newName: trayUpdate,
-        userId: myMemory.userInfo.id,
-        sessionString: myMemory.userInfo.sessionString,
+        userId: userInfo.id,
+        sessionString: userInfo.sessionString,
       }
       const headers = {
         'method': 'POST',
