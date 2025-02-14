@@ -11,8 +11,8 @@ function Index({ sendDataToParent, surgdate, props, index, myTrays, statuses }) 
   const [location, setLocation] = useState(props.location || "");
   const [trayId, setTrayId] = useState(props.id); // id of tray before change
   const [setNeeded, setSetNeeded] = useState(props); // tray object at first and after change
-  const [open, setOpen] = useState(props.open || true);
-  const [checkedIn, setCheckedIn] = useState(props.checkedIn || false);
+  const [open, setOpen] = useState(props.open);
+  const [checkedIn, setCheckedIn] = useState(props.checkedIn);
   const [spStyle, setSpStyle] = useState(styles.collapsed);
   const [snStyle, setSnStyle] = useState(styles.collapsed);
   const { myMemory, setMyMemory } = useMemory();
@@ -124,8 +124,8 @@ function Index({ sendDataToParent, surgdate, props, index, myTrays, statuses }) 
     }
     (async () => {
         const myCheck = await checkForSameDay();
-        console.log(myCheck.length)
         if (myCheck.length > 0){
+          if (myCheck[0].caseId == props.id) {return}
           setSnStyle(styles.collapsed);
           setConflictObj(prev => myCheck[0]);
           setWarningStyle(styles.warning);
@@ -144,12 +144,14 @@ function Index({ sendDataToParent, surgdate, props, index, myTrays, statuses }) 
       <View style={warningStyle}>
         <Text allowFontScaling={false} style={{textAlign: "center", fontSize: width * 0.05, fontWeight: "bold"}}>Warning, Tray Conflict!</Text>
         <ScrollView style={{minHeight: width * 0.23, maxHeight: width * 0.23, marginBottom: width * 0.02, padding: width * 0.02, backgroundColor: "#ededed"}}>
-          <Text style={{fontSize: width * 0.04, textAlign: "justify"}}>{setNeeded.trayName} already scheduled for use with {conflictObj.dr} at {conflictObj.hosp} on the same day.</Text>
+          <Text style={{fontSize: width * 0.04, textAlign: "justify"}}>{setNeeded.trayName} already scheduled for use with {conflictObj.surgeonName} at {conflictObj.facilityName} on the same day.</Text>
         </ScrollView>
         <View style={styles.row}>
           <TouchableOpacity
             onPress={() => {
-              setSetNeeded(props)
+              setSetNeeded({trayName: "Choose Tray...", location: '', loaner: false, checkedIn: false, open: true})
+              sendDataToParent({myAction: 'remove', tray: props}, index);
+              sendDataToParent({myAction: 'chooseTray', newSet: {trayName: "Choose Tray...", location: '', loaner: false, checkedIn: false, open: true}}, index);
               setWarningStyle(styles.collapsed);
             }}
             >
@@ -189,6 +191,7 @@ function Index({ sendDataToParent, surgdate, props, index, myTrays, statuses }) 
           onValueChange={async (itemValue, itemIndex) => {
             if (itemValue != "Choose Tray...") {
               const chosenTray = myTrays.filter((value) => value.id == itemValue)[0];
+              console.log("Chosen: ", chosenTray);
               setSetNeeded(chosenTray);
             }
           }}

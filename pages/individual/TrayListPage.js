@@ -39,6 +39,8 @@ const ListPage = () => {
     const [styleA, setStyleA] = useState(styles.prevG);
     const [styleB, setStyleB] = useState(styles.prevY);
     const [styleC, setStyleC] = useState(styles.prevR);
+    const [newTray, setNewTray] = useState(false);
+    const [newTrayText, setNewTrayText] = useState('');
     
     async function saveData (userInfo) {
         setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
@@ -143,6 +145,31 @@ const ListPage = () => {
     async function convertMonthToString (myMonth) {
         const monthArr = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return monthArr[myMonth];
+    }
+
+    async function addTray () {
+        const data = {
+            userId: myMemory.userInfo.id,
+            sessionString: myMemory.userInfo.sessionString,
+            trayName: newTrayText,
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json'
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://surgiflow.replit.app/addTray';
+        const response = await fetch(url, headers)
+            .then(response => {
+                if (!response.ok){
+                    console.error("Error - addTray()")
+                } else {
+                    getTrays();
+                    return;
+                }
+            })
     }
 
     async function getTrays () {
@@ -519,11 +546,63 @@ const ListPage = () => {
                     onPress={() => closeMenu()}
                     ></TouchableOpacity>
             </View>
-            <Text allowFontScaling={false} style={{opacity: 0.4, marginLeft: width * 0.02}}>*Green=Sterile, Red=Dirty, Yellow=Unknown</Text>
-            <View style={styles.row}>
-                <Image source={require('../../assets/icons/star.png')} style={styles.icon1}/>
-                <Text allowFontScaling={false} style={{opacity: 0.4}}>=Needed Within 3 Days</Text>
-            </View>
+            <Text allowFontScaling={false} style={{opacity: 0.4, marginLeft: width * 0.02}}>*you can also edit trays in Settings</Text>
+            {!newTray && <TouchableOpacity
+                onPress={() => setNewTray(true)}
+                >
+                <Text allowFontScaling={false} style={{
+                    height: width * 0.1,
+                    width: width * 0.96,
+                    backgroundColor: "#ededed",
+                    borderRadius: 5,
+                    borderWidth: width * 0.002,
+                    marginLeft: width * 0.02,
+                    marginTop: width * 0.02,
+                    marginBottom: width * 0.02,
+                    textAlign: "center",
+                    fontSize: width * 0.06,
+                    paddingTop: width * 0.01,
+                }}>Add New Tray +</Text>
+            </TouchableOpacity>}
+            {newTray && <View style={styles.row}>
+                <TextInput 
+                    allowFontScaling={false}
+                    value={newTrayText}
+                    onChangeText={(input) => setNewTrayText(input)}
+                    placeholder={"Enter New Tray Name"}
+                    style={{
+                        height: width * 0.1,
+                        width: width * 0.8,
+                        backgroundColor: "#ededed",
+                        borderRadius: 5,
+                        borderWidth: width * 0.002,
+                        marginLeft: width * 0.02,
+                        marginTop: width * 0.02,
+                        marginBottom: width * 0.02,
+                        padding: width * 0.01,
+                    }}
+                    />
+                <TouchableOpacity
+                    onPress={() => {
+                        addTray();
+                        setNewTrayText('');
+                        setNewTray(false)
+                    }}
+                    >
+                    <Text allowFontScaling={false} style={{
+                        height: width * 0.1,
+                        width: width * 0.15,
+                        backgroundColor: "#d6d6d7",
+                        marginLeft: width * 0.01,
+                        marginTop: width * 0.02,
+                        marginBottom: width * 0.02,
+                        borderRadius: 5,
+                        fontSize: width * 0.05,
+                        paddingLeft: width * 0.02,
+                        paddingTop: width * 0.02,
+                    }}>Save</Text>
+                </TouchableOpacity>
+            </View>}
             <View style={styles.columns}>
                 <View style={styles.cell}>
                     <Text allowFontScaling={false} style={styles.columnText}>Tray</Text>
@@ -863,7 +942,7 @@ const ListPage = () => {
         zIndex: 1,
         position: "absolute",
         width: width,
-        height: height * 0.89,
+        minHeight: height * 0.89,
         marginTop: width * 0.245,
         backgroundColor: "rgba(51,52,54, 0.6)",
         opacity: 1,

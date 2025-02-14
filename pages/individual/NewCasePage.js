@@ -52,6 +52,7 @@ function CasePage () {
     const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
+    const firstLoad = useRef(true);
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -98,21 +99,20 @@ function CasePage () {
         if (data.myAction == "remove") {
             const tempArr = trayList.filter((item, i) => i !== index);
             setTrayList(prev => tempArr);
-            // if id not null, send request to server to remove tray from uses
-            if (data.tray.id != null) {
-                removeTrayFromCase(data.tray);
-            }
+            // trayList not saved in DB, no need to remove from 'trayUses'
         } else if (data.myAction == 'chooseTray') {
             // change tray selected
             const tempArr = [...trayList];
+            data.newSet.checkedIn = false;
+            data.newSet.open = true;
             tempArr[index] = data.newSet;
             setTrayList(prev => tempArr);
         } else if (data.myAction == "openHold") {
-            const tempArr = [...trayList];
+            const tempArr = trayList;
             tempArr[index].open = data.open;
             setTrayList(prev => tempArr);
         } else if (data.myAction == "checkedIn") {
-            const tempArr = [...trayList];
+            const tempArr = trayList;
             tempArr[index].checkedIn = data.checkedIn;
             setTrayList(prev => tempArr);
         } else if (data.myAction == 'updateLoanerName') {
@@ -126,7 +126,7 @@ function CasePage () {
         }
     };
 
-    async function updateLoanerName (tray) {
+    /*async function updateLoanerName (tray) {
         const data = {
             trayId: tray.trayId,
             newName: tray.trayName,
@@ -146,9 +146,9 @@ function CasePage () {
                 if (!response.ok) {console.error("Error - updateTrayName()")}
             })
         return;
-    }
+    }*/
 
-    async function updateTrayLocation (tray) {
+    /*async function updateTrayLocation (tray) {
         const data = {
             trayId: tray.id,
             location: tray.location,
@@ -171,9 +171,9 @@ function CasePage () {
                     return response.json()
                 })
         return;
-    }
+    }*/
 
-    async function removeTrayFromCase (tray) {
+    /*async function removeTrayFromCase (tray) {
         const data = {
             trayId: tray.id,
             caseId: caseId,
@@ -196,7 +196,7 @@ function CasePage () {
                     return response.json()
                 })
         return;
-    }
+    }*/
 
     async function getMonthString (monthInt) {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -275,7 +275,7 @@ function CasePage () {
         setMyTrays(response);
     }
 
-    async function getCaseTrayUses () {
+    /*async function getCaseTrayUses () {
         const data = {
             caseId: caseId,
             userId: myMemory.userInfo.id,
@@ -298,7 +298,7 @@ function CasePage () {
             })
             .then(data => {return data})
         setTrayList(prev => response);
-    }
+    }*/
 
     async function addSurgeonToDB() {
         const data = {
@@ -492,9 +492,13 @@ function CasePage () {
     }
 
     useEffect(() => {
-        getSurgeons();
-        getFacilities();
-        getMyTrays();
+        if (firstLoad.current == true) {
+            console.log("First Load Only?")
+            firstLoad.current = false;
+            getSurgeons();
+            getFacilities();
+            getMyTrays();
+        }
     }, []);
 
     return (

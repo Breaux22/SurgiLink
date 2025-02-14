@@ -62,6 +62,7 @@ function CasePage () {
     const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
+    const firstLoad = useRef(true);
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -227,6 +228,8 @@ function CasePage () {
         } else if (data.myAction == 'chooseTray') {
             // change tray selected
             const tempArr = [...trayList];
+            data.newSet.checkedIn = false;
+            data.newSet.open = true;
             tempArr[index] = data.newSet;
             setTrayList(prev => tempArr);
         } else if (data.myAction == "openHold") {
@@ -570,6 +573,7 @@ function CasePage () {
                 tempArr2.push(item.id);
             }
         })
+        console.log("TL: ", trayList)
         const caseData = {
             caseId: caseId,
             dateString: new Date(surgdate - (1000*60*60*8)),
@@ -656,12 +660,16 @@ function CasePage () {
     }
 
     useEffect(() => {
-        updateValues();
-        getSurgeons();
-        getFacilities();
-        getMyTrays();
-        getCaseTrayUses();
-        fetchImages();
+        if (firstLoad.current) {
+            firstLoad.current = false;
+            console.log("First Load Only?")
+            updateValues();
+            getSurgeons();
+            getFacilities();
+            getMyTrays();
+            fetchImages();
+            getCaseTrayUses();
+        }
     }, []);
 
     return (

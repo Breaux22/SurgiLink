@@ -62,6 +62,7 @@ function SettingsPage () {
     const [username, setUsername] = useState('');
     const [existingPassword, setExistingPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [newPassword2, setNewPassword2] = useState('');
     const [newPassStyle, setNewPassStyle] = useState(false);
     const [accountDetails1, setAccountDetails1] = useState(styles.collapsed);
     const [accountDetails2, setAccountDetails2] = useState(styles.row);
@@ -69,6 +70,8 @@ function SettingsPage () {
     const [showDelete, setShowDelete] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [passCheck, setPassCheck] = useState('');
+    const [incorrect, setIncorrect] = useState(false);
+    const [noMatch, setNoMatch] = useState(false);
   
     async function saveData (userInfo) {
         setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
@@ -637,95 +640,6 @@ function SettingsPage () {
         marginBottom: width * 0.04,
                 }}>{username}</Text>
             </View>
-            <View style={styles.row}>
-              <Text allowFontScaling={false}>Password:</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log(newPassStyle)
-                  setNewPassStyle(!newPassStyle);
-                }}
-                >
-                <Text allowFontScaling={false} style={{
-                    borderBottomWidth: width * 0.003,
-                    width: width * 0.4,
-                    color: "#007AFF",
-                    borderColor: "#007AFF",
-                    marginLeft: width * 0.03,
-                    fontSize: width * 0.05,
-                    marginBottom: width * 0.04,
-                }}>Change Password</Text>
-              </TouchableOpacity>
-            </View>
-            {newPassStyle && <View>
-              <TextInput 
-                style={{
-                  width: width * 0.92,
-                  height: width * 0.1,
-                  backgroundColor: "#ededed",
-                  borderRadius: 5,
-                  borderWidth: width * 0.002,
-                  marginBottom: width * 0.02,
-                  fontSize: width * 0.05,
-                  padding: width * 0.01,
-                }}
-                secureTextEntry={true}
-                allowFontScaling={false}
-                value={existingPassword}
-                placeholder={'Enter Existing Password.'}
-                onChangeText={(input) => setExistingPassword(input)}
-                />
-              <TextInput 
-                style={{
-                  width: width * 0.92,
-                  height: width * 0.1,
-                  backgroundColor: "#ededed",
-                  borderRadius: 5,
-                  borderWidth: width * 0.002,
-                  marginBottom: width * 0.02,
-                  fontSize: width * 0.05,
-                  padding: width * 0.01,
-                }}
-                secureTextEntry={true}
-                allowFontScaling={false}
-                value={newPassword}
-                placeholder={'Enter New Password.'}
-                onChangeText={(input) => setNewPassword(input)}
-                />
-              <TextInput 
-                style={{
-                  width: width * 0.92,
-                  height: width * 0.1,
-                  backgroundColor: "#ededed",
-                  borderRadius: 5,
-                  borderWidth: width * 0.002,
-                  fontSize: width * 0.05,
-                  padding: width * 0.01,
-                }}
-                secureTextEntry={true}
-                allowFontScaling={false}
-                value={newPassword}
-                placeholder={'Confirm New Password.'}
-                onChangeText={(input) => setNewPassword(input)}
-                />
-              <TouchableOpacity
-                onPress={() => {
-                  setNewPassStyle(false);
-                  // save new password if new passes match and old password is correct
-                }}
-                >
-                <Text allowFontScaling={false} style={{
-                  fontSize: width * 0.05,
-                  width: width * 0.15,
-                  height: width * 0.08,
-                  borderRadius: 5,
-                  backgroundColor: "#d6d6d7",
-                  paddingLeft: width * 0.025,
-                  paddingTop: width * 0.008,
-                  marginTop: width * 0.02,
-                  marginLeft: width * 0.77,
-                }}>Save</Text>
-              </TouchableOpacity>
-            </View>}
             <TouchableOpacity
               onPress={() => setShowDelete(true)}
               >
