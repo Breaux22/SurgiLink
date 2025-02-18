@@ -11,7 +11,6 @@ import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -57,7 +56,6 @@ function SettingsPage () {
     const [stats2, setStats2] = useState(styles.collapsed);
     const [stats3, setStats3] = useState(styles.collapsed);
     const navigation = useNavigation();
-    const { myMemory, setMyMemory } = useMemory();
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [existingPassword, setExistingPassword] = useState('');
@@ -72,10 +70,6 @@ function SettingsPage () {
     const [passCheck, setPassCheck] = useState('');
     const [incorrect, setIncorrect] = useState(false);
     const [noMatch, setNoMatch] = useState(false);
-  
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-    };
 
     useEffect(() => {
       (async () => {
@@ -85,7 +79,7 @@ function SettingsPage () {
     },[])
 
     async function sessionVerify () {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
@@ -120,7 +114,7 @@ function SettingsPage () {
   
   
     async function logout () {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             username: userInfo.username,
             sessionString: userInfo.sessionString,
@@ -145,7 +139,7 @@ function SettingsPage () {
     }
 
     async function deleteUser () {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const data = {
         userId: userInfo.id,
         sessionString: userInfo.sessionString,
@@ -192,7 +186,7 @@ function SettingsPage () {
 
     async function deleteItems (list, url, setDeleteNum, follow) {
       const items = await list.filter((obj) => obj.myState === true);
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const caseData = {
         items: items,
         userId: userInfo.id,
@@ -218,7 +212,7 @@ function SettingsPage () {
     };
 
     async function addItem (param, item, url, follow) {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       let caseData;
       if (param === 'surgeonName') {
         caseData = { 
@@ -272,7 +266,7 @@ function SettingsPage () {
     }
   
     async function getSurgeons() {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           userId: userInfo.id,
           sessionString: userInfo.sessionString,
@@ -300,7 +294,7 @@ function SettingsPage () {
     }
 
     async function getFacilities() {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           userId: userInfo.id,
           sessionString: userInfo.sessionString,
@@ -328,7 +322,7 @@ function SettingsPage () {
     }
 
     async function getTrays() {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           userId: userInfo.id,
           sessionString: userInfo.sessionString,
@@ -391,7 +385,7 @@ function SettingsPage () {
     }
 
     async function updateSurgeon (prevName, index) {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const caseData = {
         prevName: prevName,
         newName: surgUpdate,
@@ -418,7 +412,7 @@ function SettingsPage () {
     }
 
     async function updateFacility (prevName, index) {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const caseData = {
         prevName: prevName,
         newName: facilUpdate,
@@ -445,7 +439,7 @@ function SettingsPage () {
     }
 
     async function updateTray (tray, index) {
-      const userInfo = await getSecureStorage('userInfo');
+      const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const caseData = {
         trayId: tray.id,
         newName: trayUpdate,
@@ -506,30 +500,32 @@ function SettingsPage () {
   
     return (
       <SafeAreaView>
-        <TouchableOpacity
-          style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
-          onPress={() => {
-              navigation.reset({
-                  index: 0,
-                  routes: [{name: 'Create New Case', params: {backTo: {name: 'Settings', params: {month: month, year: year}}}}]
-              })
-          }}
-          >
-          <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
-        </TouchableOpacity>
-        <View style={styles.menuButtons}>
-          <TouchableOpacity 
-              style={{width: width * 0.2, }}
-              onPress={openMenu}
-              >
-              <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
-          </TouchableOpacity>
-          <TouchableOpacity
-              style={{width: width * 0.2, }}
-              onPress={closeMenu}
-              >
-              <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
-          </TouchableOpacity>
+        <View style={styles.row}>
+            <View style={styles.menuButtons}>
+                <TouchableOpacity 
+                    style={{width: width * 0.2, }}
+                    onPress={openMenu}
+                    >
+                    <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{width: width * 0.2, }}
+                    onPress={closeMenu}
+                    >
+                    <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+                style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                onPress={() => {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: month, year: year}}}}]
+                    })
+                }}
+                >
+                <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
+            </TouchableOpacity>
         </View>
         <View style={styles.row}>
           <View style={menuStyle}>
@@ -1110,7 +1106,8 @@ const styles = StyleSheet.create({
   menuButtons: {
       borderBottomWidth: width * 0.002,
       borderBottomColor: "#cfcfcf",
-      height: width * 0.124
+      height: width * 0.124,
+      width: width,
   },
   collapsed: {
       display: 'none',

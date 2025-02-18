@@ -11,7 +11,6 @@ import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -59,16 +58,10 @@ function CasePage () {
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [backStyle, setBackStyle] = useState(styles.back);
     const loadBarRef = useRef(loadBar);
-    const { myMemory, setMyMemory } = useMemory();
     const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
     const firstLoad = useRef(true);
-
-    async function getSecureStorage (name) {
-        const userInfo = JSON.parse(await SecureStore.getItemAsync(name));
-        return userInfo;
-    }
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -92,10 +85,6 @@ function CasePage () {
             setFacilityStyle(styles.collapsed);
         }, 2500);
     };
-    
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-    };
 
     async function openMenu() {
         setOpenStyle(styles.collapsed);
@@ -112,10 +101,11 @@ function CasePage () {
     }
 
     async function deleteImageFromCloudinary () {
+        const userInfo = JSON.parse(JSON.parse(await SecureStore.getItemAsync('userInfo')))
         const data = {
             publicId: previewImage.public_id,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -168,7 +158,7 @@ function CasePage () {
     }, [loadBar]);
 
     async function getCloudCreds () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -210,6 +200,7 @@ function CasePage () {
             throw new Error('Failed to fetch images');
           }
           const data = await response.json();
+        console.log("My images: ", data)
           const filteredImages = data.resources.filter((image) => {
             const myIndex = image.public_id.indexOf("_");
             if (image.public_id.slice(0, myIndex) === String(caseId)) {
@@ -259,7 +250,7 @@ function CasePage () {
     };
 
     async function updateLoanerName (tray) {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             trayId: tray.trayId,
             newName: tray.trayName,
@@ -282,7 +273,7 @@ function CasePage () {
     }
 
     async function updateTrayLocation (tray) {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             trayId: tray.id,
             location: tray.location,
@@ -307,7 +298,7 @@ function CasePage () {
     }
 
     async function removeTrayFromCase (tray) {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             trayId: tray.id,
             caseId: caseId,
@@ -337,7 +328,7 @@ function CasePage () {
     }
 
     async function getSurgeons() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -362,7 +353,7 @@ function CasePage () {
     }
 
     async function getFacilities() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -387,7 +378,7 @@ function CasePage () {
     }
 
     async function getMyTrays() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -412,7 +403,7 @@ function CasePage () {
     }
 
     async function getCaseTrayUses () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             caseId: caseId,
             userId: userInfo.id,
@@ -438,7 +429,7 @@ function CasePage () {
     }
 
     async function addSurgeonToDB() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             surgeonName: surgeonText,
             userId: userInfo.id,
@@ -466,7 +457,7 @@ function CasePage () {
     }
 
     async function addFacilityToDB() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             facilityName: facilityText,
             userId: userInfo.id,
@@ -516,7 +507,7 @@ function CasePage () {
       }
 
     async function deleteCase() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             caseId: caseId,
             userId: userInfo.id,
@@ -590,7 +581,7 @@ function CasePage () {
                 tempArr2.push(item.id);
             }
         })
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const caseData = {
             caseId: caseId,
             dateString: new Date(surgdate - (1000*60*60*8)),

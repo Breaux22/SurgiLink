@@ -7,7 +7,6 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import DailyViewCase from '../../components/DailyViewCase/DailyViewCase';
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -44,14 +43,9 @@ const WeeklyViewPage = () => {
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const navigation = useNavigation();
-    const { myMemory, setMyMemory } = useMemory();
-
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-    };
 
     async function sessionVerify () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
@@ -83,7 +77,7 @@ const WeeklyViewPage = () => {
     }
 
     async function logout () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             username: userInfo.username,
             sessionString: userInfo.sessionString,
@@ -146,7 +140,7 @@ const WeeklyViewPage = () => {
       }
 
     async function getCases () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         let monthArr = [];
         if (weekStart.getMonth() == new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth()){monthArr = [weekStart.getMonth() + 1]}
         else {monthArr = [weekStart.getMonth() + 1, new Date(weekStart.getTime() + (1000*60*60*24*7)).getMonth() + 1]}
@@ -389,41 +383,31 @@ const WeeklyViewPage = () => {
 
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
-            <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
-                onPress={() => {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{
-                            name: 'Create New Case', 
-                            params: {
-                                backTo: {
-                                    name: 'Weekly View', 
-                                    params: {                                                                
-                                        weekStart: weekStart,                                                 
-                                        month: weekStart.getMonth(),
-                                        year: weekStart.getFullYear()
-                                    }
-                                }
-                            }
-                        }]
-                    })
-                }}
-                >
-                <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
-            </TouchableOpacity>
-            <View style={styles.menuButtons}>
-                <TouchableOpacity 
-                    style={{width: width * 0.2, }}
-                    onPress={openMenu}
-                    >
-                    <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
-                </TouchableOpacity>
+            <View style={styles.row}>
+                <View style={styles.menuButtons}>
+                    <TouchableOpacity 
+                        style={{width: width * 0.2, }}
+                        onPress={openMenu}
+                        >
+                        <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{width: width * 0.2, }}
+                        onPress={closeMenu}
+                        >
+                        <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                    style={{width: width * 0.2, }}
-                    onPress={closeMenu}
+                    style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                    onPress={() => {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: month, year: year}}}}]
+                        })
+                    }}
                     >
-                    <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -549,9 +533,10 @@ const WeeklyViewPage = () => {
                     </TouchableOpacity>
                 </View>
             </View>
-            <View>
+            <ScrollView>
                 {weekComp}
-            </View>
+                <View style={{height: height * 0.3}}/>
+            </ScrollView>
         </SafeAreaView>
     );
   };
@@ -631,7 +616,8 @@ const styles = StyleSheet.create({
     menuButtons: {
         borderBottomWidth: width * 0.002,
         borderBottomColor: "#cfcfcf",
-        height: width * 0.124
+        height: width * 0.124,
+        width: width,
     },
     collapsed: {
         display: 'none',

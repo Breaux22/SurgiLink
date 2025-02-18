@@ -11,8 +11,8 @@ import HeaderMenu from '../../components/HeaderMenu/HeaderMenu';
 import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,15 +30,27 @@ const MonthlyViewPage = () => {
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [casesStyle, setCasesStyle] = useState(styles.collapsed);
     const [menuUp, setMenuUp] = useState(false);
-    const navigation = useNavigation();  
-    const { myMemory, setMyMemory } = useMemory();
+    const navigation = useNavigation();
 
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
+    /*async function storeData (key, value) => {
+      try {
+        await AsyncStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.error('Error saving data', e);
+      }
     };
 
+    async function getData (key) => {
+      try {
+        const value = await AsyncStorage.getItem(key);
+        return value ? JSON.parse(value) : null;
+      } catch (e) {
+        console.error('Error retrieving data', e);
+      }
+    };*/
+
     async function sessionVerify () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
@@ -70,7 +82,7 @@ const MonthlyViewPage = () => {
     }
 
     async function logout () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             username: userInfo.username,
             sessionString: userInfo.sessionString,
@@ -108,17 +120,6 @@ const MonthlyViewPage = () => {
         setBackBlur(styles.collapsed);
     }
 
-    /*useFocusEffect(
-        useCallback(() => {
-          const runOnFocus = () => {
-            refresh();
-          };
-          runOnFocus();
-          return () => {
-          };
-        }, [])
-      );*/
-
     function prevMonth () {
         setSelectedDate(null);
         if (currMonth == 0){
@@ -145,7 +146,7 @@ const MonthlyViewPage = () => {
     }
 
     async function getCases (year, months) {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             surgYear: year,
             months: months,
@@ -164,7 +165,7 @@ const MonthlyViewPage = () => {
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
-                    console.error("Error - geCases()")
+                    console.error("Error - getCases()")
                 }
                 return response.json()
             })
@@ -177,10 +178,10 @@ const MonthlyViewPage = () => {
     function generateBlockList (myDate) {
         const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
         return (
-            <View style={{height: width * 0.2, overflow: "hidden"}}>
+            <View style={{height: height * 0.1, overflow: "hidden"}}>
                 {caseList.map((item, index) => (
-                    <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", height: width * 0.031, width: width * 0.128, marginLeft: width * 0.005, marginBottom: width * 0.005, backgroundColor: item.color, }}>
-                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: width * 0.025}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName.slice(0,10) : "Surgeon?"}</Text>
+                    <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", height: height * 0.015, width: width * 0.128, marginLeft: width * 0.005, marginBottom: height * 0.0025, backgroundColor: item.color, }}>
+                        <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: height * 0.0125}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName.slice(0,10) : "Surgeon?"}</Text>
                     </View>
                 ))}
             </View>
@@ -191,7 +192,7 @@ const MonthlyViewPage = () => {
         const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
         if (caseList.length > 0) {
             return (
-                <View style={{borderRadius: 15, width: width * 0.03, height: width * 0.03, marginLeft: width * 0.06, backgroundColor: "#a6f296"}}/>
+                <View style={{borderRadius: 15, width: height * 0.015, height: height * 0.015, alignSelf: "center", backgroundColor: "#a6f296"}}/>
             )
         }
     }
@@ -222,13 +223,13 @@ const MonthlyViewPage = () => {
                             })
                         }}
                         >
-                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: width * 0.25, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: item.color, }}>
-                            <View style={[styles.row, { borderBottomWidth: width * 0.003, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
-                                <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
+                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: height * 0.125, marginLeft: width * 0.05, marginTop: height * 0.01, backgroundColor: item.color, }}>
+                            <View style={[styles.row, { borderBottomWidth: height * 0.0015, width: width * 0.88, marginLeft: width * 0.01, }]}>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{textAlign: "right", fontSize: height * 0.025, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName: "Surgeon?"}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName: "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -236,7 +237,7 @@ const MonthlyViewPage = () => {
                 ))
             )
         } else {
-            setCasesComp(prev => <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.03, color: "#fff", }}>No Cases.</Text>)
+            setCasesComp(prev => <Text allowFontScaling={false} style={{fontSize: height * 0.03, marginLeft: width * 0.03, color: "#fff", }}>No Cases.</Text>)
         }
     }
     
@@ -254,13 +255,13 @@ const MonthlyViewPage = () => {
                             })
                         }}
                         >
-                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: width * 0.25, marginLeft: width * 0.05, marginTop: width * 0.02, backgroundColor: item.color, }}>
-                            <View style={[styles.row, { borderBottomWidth: width * 0.003, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: width * 0.05, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
-                                <Text allowFontScaling={false} style={{textAlign: "right", fontSize: width * 0.05, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
+                        <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: height * 0.125, marginLeft: width * 0.05, marginTop: height * 0.01, backgroundColor: item.color, }}>
+                            <View style={[styles.row, { borderBottomWidth: height * 0.0015, width: width * 0.88, marginLeft: width * 0.01, }]}>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{textAlign: "right", fontSize: height * 0.025, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
+                            <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -268,7 +269,7 @@ const MonthlyViewPage = () => {
                 ))
             )
         } else {
-            setCasesComp(prev => <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.03, color: "#fff", }}>No Cases.</Text>)
+            setCasesComp(prev => <Text allowFontScaling={false} style={{fontSize: height * 0.03, marginLeft: width * 0.03, color: "#fff", }}>No Cases.</Text>)
         }
     }
 
@@ -291,15 +292,15 @@ const MonthlyViewPage = () => {
             tailArr = [...tailArr, i];
         }
         setCalendarComp(prev => 
-            <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: width * 0.003, }}>
+            <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: height * 0.0015, }}>
                 {headArr.map((item, index) => (
-                    <View key={"A" + item} style={{width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"A" + item} style={{width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
                 {dateArr.map((item, index) => {
-                    let styleChoice = { width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
-                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    let styleChoice = { width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
+                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
                     const today = new Date();
                     if (today.getFullYear() == currYear && today.getMonth() == currMonth && today.getDate() == item+1){styleChoice = styleB}
                     return (
@@ -319,7 +320,7 @@ const MonthlyViewPage = () => {
                     )
                 })}
                 {tailArr.map((item, index) => (
-                    <View key={"C" + item} style={{width: width * 0.1428, height: width * 0.25, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"C" + item} style={{width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
@@ -346,15 +347,15 @@ const MonthlyViewPage = () => {
             tailArr = [...tailArr, i];
         }
         setCalendarComp(prev => 
-            <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: width * 0.003, }}>
+            <View style={{flexDirection: "row", flexWrap: "wrap", borderTopWidth: height * 0.0015, }}>
                 {headArr.map((item, index) => (
-                    <View key={"D" + item} style={{width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"D" + item} style={{width: width * 0.1428, height: height * 0.05, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
                 {dateArr.map((item, index) => {
-                    let styleChoice = { width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
-                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, };
+                    let styleChoice = { width: width * 0.1428, height: height * 0.05, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
+                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: height * 0.05, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
                     const today = new Date();
                     if (today.getFullYear() == currYear && today.getMonth() == currMonth && today.getDate() == item+1){styleChoice = styleB}
                     return (
@@ -372,7 +373,7 @@ const MonthlyViewPage = () => {
                     )
                 })}
                 {tailArr.map((item, index) => (
-                    <View key={"F" + item} style={{width: width * 0.1428, height: width * 0.11, borderBottomWidth: width * 0.003, borderRightWidth: width * 0.003, backgroundColor: "#d6d6d7"}}>
+                    <View key={"F" + item} style={{width: width * 0.1428, height: height * 0.05, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, backgroundColor: "#d6d6d7"}}>
                         <Text allowFontScaling={false}>{item + 1}</Text>
                     </View>
                 ))}
@@ -395,29 +396,31 @@ const MonthlyViewPage = () => {
         
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
-            <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
-                onPress={() => {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: currMonth, year: currYear}}}}]
-                    })
-                }}
-                >
-                <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
-            </TouchableOpacity>
-            <View style={styles.menuButtons}>
-                <TouchableOpacity 
-                    style={{width: width * 0.2, }}
-                    onPress={openMenu}
-                    >
-                    <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
-                </TouchableOpacity>
+            <View style={styles.row}>
+                <View style={styles.menuButtons}>
+                    <TouchableOpacity 
+                        style={{width: width * 0.2, }}
+                        onPress={openMenu}
+                        >
+                        <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{width: width * 0.2, }}
+                        onPress={closeMenu}
+                        >
+                        <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                    style={{width: width * 0.2, }}
-                    onPress={closeMenu}
+                    style={{position: "absolute", right: width * 0.01, marginTop: height * 0.005, zIndex: 1, }}
+                    onPress={() => {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: currMonth, year: currYear}}}}]
+                        })
+                    }}
                     >
-                    <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: height * 0.045, height: height * 0.045, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -495,51 +498,55 @@ const MonthlyViewPage = () => {
                 </View>
                 <View style={backBlur}></View>
             </View>
-            <View style={{padding: width * 0.021, flexDirection: "row"}}>
+            <View style={{height: height * 0.06, flexDirection: "row"}}>
                 <TouchableOpacity
                     onPress={() => getCases(currYear, [currMonth + 1])}
                     >
-                    <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.09, height: width * 0.09}}/>
+                    <Image source={require('../../assets/icons/refresh.png')} style={{width: height * 0.045, height: height * 0.045, marginLeft: width * 0.02, marginTop: height * 0.01,}}/>
                 </TouchableOpacity>
-                <TouchableOpacity
-                    style={{marginLeft: width * 0.29}}
-                    onPress={() => {
-                        setCurrMonth(prev => new Date().getMonth());
-                        setCurrYear(prev => new Date().getFullYear());
-                    }}
-                    >
-                    <Image source={require('../../assets/icons/time.png')} style={{width: width * 0.09, height: width * 0.09}}/>
-                </TouchableOpacity>
-                <View style={{backgroundColor: "#333436", width: width * 0.48, marginLeft: width * 0.01, borderRadius: 30, flexDirection: "row"}}>
+                <View style={{  position: "absolute", right: width * 0.01, top: height * 0.01, flexDirection: "row" }}>
                     <TouchableOpacity
-                        onPress={() => prevMonth()}
+                        onPress={() => {
+                            setCurrMonth(prev => new Date().getMonth());
+                            setCurrYear(prev => new Date().getFullYear());
+                        }}
                         >
-                        <Text style={{color: "#fff", fontSize: width * 0.07, marginLeft: width * 0.02, marginTop: - width * 0.005, }}>{"<"}</Text>
+                        <Image source={require('../../assets/icons/time.png')} style={{width: height * 0.045, height: height * 0.045,}}/>
                     </TouchableOpacity>
-                    <View style={styles.row}>
-                        <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: width * 0.07, marginLeft: width * 0.01, width: width * 0.16, }}>{getMonthString(currMonth)}</Text>
-                        <Text style={{color: "#fff", fontSize: width * 0.07, width: width * 0.18, }}>{currYear}</Text>
+                    <View style={{paddingLeft: height * 0.02, paddingRight: height * 0.02,backgroundColor: "#333436", borderRadius: 30, flexDirection: "row", alignSelf: "center", }}>
+                        <TouchableOpacity
+                            style={{alignSelf: "center",}}
+                            onPress={() => prevMonth()}
+                            >
+                            <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{"<"}</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.row, {alignSelf: "center"}]}>
+                            <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: height * 0.035, }}>{getMonthString(currMonth)}</Text>
+                            <Text style={{color: "#fff", fontSize: height * 0.035, }}>{currYear}</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={{alignSelf: "center",}}
+                            onPress={() => nextMonth()}>
+                            <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{">"}</Text>
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => nextMonth()}>
-                        <Text style={{color: "#fff", fontSize: width * 0.07, marginTop: - width * 0.005, }}>{">"}</Text>
-                    </TouchableOpacity>
                 </View>
+
             </View>
             <View style={styles.row}>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.053}}>Su</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Mo</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Tu</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>We</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Th</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Fr</Text>
-                <Text allowFontScaling={false} style={{fontSize: width * 0.03, marginLeft: width * 0.105}}>Sa</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.053}}>Su</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Mo</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Tu</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>We</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Th</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Fr</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Sa</Text>
             </View>
             {calendarComp}
             <View style={casesStyle}>
                 <View style={styles.row}>
                     <Text allowFontScaling={false} 
-                        style={{color: "#fff", fontSize: width * 0.08, fontStyle: 'italic', marginTop: width * 0.02, marginLeft: width * 0.035, width: width * 0.82}}
+                        style={{color: "#fff", fontSize: height * 0.04, fontStyle: 'italic', marginTop: height * 0.01, marginLeft: width * 0.035, width: width * 0.82}}
                         >
                         {getMonthString(currMonth)}, {selectedDate} {currYear}
                     </Text>
@@ -551,14 +558,14 @@ const MonthlyViewPage = () => {
                         }}
                         >
                         <Image source={require('../../assets/icons/down-arrow-white.png')} 
-                            style={{width: width * 0.13, height: width * 0.13, marginTop: width * 0.02, }}
+                            style={{width: height * 0.065, height: height * 0.065, marginTop: height * 0.01, position: "absolute", bottom: - height * 0.01, right: - width * 0.11, }}
                             />
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView style={{width: width, height: width * 0.9}}>
+                <ScrollView style={{width: width, height: height * 0.45}}>
                     {casesComp}
-                    <View style={{height: width * 0.4}}/>
+                    <View style={{height: height * 0.2}}/>
                 </ScrollView>
             </View>
             <View style={styles.showCasesDown}>
@@ -571,7 +578,7 @@ const MonthlyViewPage = () => {
                         setSelectedDate(null);
                     }}
                 >
-                    <Image source={require('../../assets/icons/up-arrow-white.png')} style={{width: width * 0.13, height: width * 0.13, marginLeft: width * 0.855, marginTop: width * 0.02, }}/>
+                    <Image source={require('../../assets/icons/up-arrow-white.png')} style={{position: "absolute", bottom: - height * 0.07, right: width * 0.03, width: height * 0.065, height: height * 0.065, marginTop: height * 0.01, }}/>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -598,15 +605,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 30, 
         borderTopRightRadius: 30, 
     },
-    rect5: {
-        width: width * 0.8,
-        height: width * 0.08,
-        backgroundColor: "rgba(255,255,255,1)",
-        borderRadius: 5,
-        marginTop: width * 0.03,
-        marginLeft: width * 0.11,
-        marginBottom: width * 0.03,
-    },
     container: {
         height: height * 0.9,
     },
@@ -619,46 +617,42 @@ const styles = StyleSheet.create({
     btnRow: {
         flexDirection: 'row',
     },
-    centered: {
-        marginLeft: width * 0.285,
-        marginTop: width * 0.02,
-    },
     day: {
         fontWeight: 'medium-bold',
-        fontSize: width * 0.105,
-        marginTop: - width * 0.04,
+        fontSize: height * 0.05,
+        marginTop: - height * 0.02,
         marginLeft: width * 0.035,
         marginRight: width * 0.035,
         color: "#363636"
     },
     loadingArrowStyle: {
         width: width * 0.11,
-        height: width * 0.11,
+        height: height * 0.055,
         marginLeft: width * 0.075,
-        marginTop: width * 0.02,
+        marginTop: height * 0.01,
     },
     calendarBlock: {
-        height: width * 0.28,
+        height: height * 0.14,
         paddingLeft: width * 0.006,
         paddingRight: width * 0.008,
         borderLeftColor: "#cfcfcf",
         borderLeftWidth: width * 0.0025,
-        borderBottomWidth: width * 0.004,
+        borderBottomWidth: height * 0.002,
         borderBottomColor: "#cfcfcf",
         backgroundColor: '#fff'
     },
     calendarTodayBlock: {
-        height: width * 0.28,
+        height: height * 0.14,
         paddingLeft: width * 0.006,
         paddingRight: width * 0.008,
         borderLeftColor: "#cfcfcf",
         borderLeftWidth: width * 0.0025,
-        borderBottomWidth: width * 0.004,
+        borderBottomWidth: height * 0.002,
         borderBottomColor: "#cfcfcf",
         backgroundColor: 'rgba(0, 122, 255, 0.15)',
     },
     greyBlock: {
-        height: width * 0.28,
+        height: height * 0.14,
         paddingLeft: width * 0.006,
         paddingRight: width * 0.008,
         borderLeftColor: "#cfcfcf",
@@ -666,74 +660,74 @@ const styles = StyleSheet.create({
         backgroundColor: "#8a8a8a",
     },
     dot: {
-        fontSize: width * 0.125,
-        marginTop: - width * 0.03,
+        fontSize: height * 0.0625,
+        marginTop: - height * 0.015,
         marginLeft: width * 0.001,
         color: "#0dd406"
     },
     arrow: {
-        fontSize: width * 0.125,
+        fontSize: height * 0.0625,
         color: "#fefefe",
     },
     month: {
-        fontSize: width * 0.08,
+        fontSize: height * 0.04,
         fontWeight: 'Bold',
         color: "#fefefe"
     },
     year: {
         fontWeight: "medium",
-        fontSize: width * 0.07,
+        fontSize: height * 0.035,
         color: "#fefefe"
     },
     noCases: {
-        fontSize: width * 0.05,
+        fontSize: height * 0.025,
         marginLeft: width * 0.16,
-        marginTop: width * 0.06
+        marginTop: height * 0.03,
     },  
     new: {
         backgroundColor: '#8a8a8a',
         marginLeft: width * 0.015,
         width: width * 0.5,
-        height: width * 0.17,
-        marginTop: width * 0.03,
+        height: height * 0.085,
+        marginTop: height * 0.015,
         borderRadius: 5
     },
     newText: {
         color: "#fefefe",
-        fontSize: width * 0.23,
-        marginTop: - width * 0.065,
+        fontSize: height * 0.115,
+        marginTop: - height * 0.0325,
         marginLeft: width * 0.18
     },
     hiddenText: {
         display: 'none'
     },
     hiddenGreyDot: {        
-        fontSize: width * 0.125,
-        marginTop: - width * 0.02,
+        fontSize: height * 0.0625,
+        marginTop: - height * 0.01,
         marginLeft: width * 0.001,
         color: "#8a8a8a"
     },
     hiddenBlueDot: {
-        fontSize: width * 0.125,
-        marginTop: - width * 0.02,
+        fontSize: height * 0.0625,
+        marginTop: - height * 0.01,
         marginLeft: width * 0.001,
         color: "rgba(0, 122, 255, 0)"
     },
     hiddenWhiteDot: {
-        fontSize: width * 0.125,
-        marginTop: - width * 0.02,
+        fontSize: height * 0.0625,
+        marginTop: - height * 0.01,
         marginLeft: width * 0.001,
         color: "#fff"
     },
     caseBox: {
-        marginBottom: width * 0.1,
+        marginBottom: height * 0.05,
     },
     monthScroll: {
         backgroundColor: 'rgba(0, 122, 255, 0.8)',
         width: width * 0.45,
         marginLeft: width * 0.02,
-        marginBottom: width * 0.03,
-        marginTop: width * 0.03,
+        marginBottom: height * 0.015,
+        marginTop: height * 0.015,
         borderRadius: 5,
         alignItems: 'center',
     },
@@ -746,62 +740,61 @@ const styles = StyleSheet.create({
     today: {
         backgroundColor: "#cfd4cf",
         borderRadius: 5,
-        height: width * 0.11,
-        width: width * 0.25,
+        height: height * 0.125,
+        width: height * 0.125,
         marginLeft: width * 0.08,
-        marginTop: width * 0.02,
+        marginTop: height * 0.01,
     },
     todayText: {
-        fontSize: width * 0.06,
+        fontSize: height * 0.03,
         color: "#6f736f",
         marginLeft: width * 0.055,
-        marginTop: width * 0.015,
+        marginTop: height * 0.0075,
     },
     menuButtons: {
-        borderBottomWidth: width * 0.0025,
+        borderBottomWidth: height * 0.00125,
         borderBottomColor: "#cfcfcf",
-        height: width * 0.124,
+        height: height * 0.0625,
+        width: width,
     },
     collapsed: {
         display: 'none',
     },
     icon3: {
-        width: width * 0.1,
-        height: width * 0.1,
+        width: height * 0.05,
+        height: height * 0.05,
         marginLeft: width * 0.02,
     },
     menu: {
         position: "absolute", 
         backgroundColor: "#fff", 
         height: height, 
-        width: width * 0.7, 
-        zIndex: 1, 
+        width: height * 0.35, 
+        zIndex: 2,
         opacity: 0.98
     },
     backBlur: {
-        backgroundColor: "rgba(211, 211, 211, 0.5)", 
+        backgroundColor: "rgba(0, 0, 0, 0.5)", 
         zIndex: 1, 
         height: height, 
-        width: width * 0.3, 
-        position: "absolute", 
-        marginLeft: width * 0.7
+        width: width, 
+        position: "absolute",
     },
     option: {
         //backgroundColor: "rgba(0, 122, 255, 0.8)",
         width: width * 0.4,
-        height: width * 0.09,
-        marginLeft: width * 0.02,
-        marginTop: width * 0.04,
-        marginBottom: width * 0.02,
+        height: height * 0.045,
+        marginLeft: height * 0.01,
+        marginTop: height * 0.02,
+        marginBottom: height * 0.01,
         borderRadius: 5,
         flexDirection: "row",
     },
     optionText: {
         //color: "#fff",
-        fontSize: width * 0.06,
-        marginTop: width * 0.0075,
+        fontSize: height * 0.03,
         textAlign: "center",
-        borderBottomWidth: width * 0.003,
+        borderBottomWidth: height * 0.0015,
         marginLeft: width * 0.02,
     },
   });

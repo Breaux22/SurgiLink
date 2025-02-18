@@ -7,7 +7,6 @@ import * as FileSystem from 'expo-file-system';
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { Cloudinary } from "@cloudinary/url-gen";
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -25,12 +24,7 @@ export default function CameraPage({ navigation, caseId }) {
   const [shutterStyle, setShutterStyle] = useState(styles.snap);
   const [optionStyle, setOptionStyle] = useState(styles.row);
   const [loadingStyle, setLoadingStyle] = useState(false);
-  const { myMemory, setMyMemory } = useMemory();
   const keepRef = useRef(false);
-
-  async function saveData (userInfo) {
-      setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-  };
 
   const cameraRef = useRef();
 
@@ -83,7 +77,7 @@ export default function CameraPage({ navigation, caseId }) {
   }
 
   async function getCloudCreds () {
-    const userInfo = await getSecureStorage('userInfo');
+    const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const data = {
           userId: userInfo.id,
           sessionString: userInfo.sessionString,

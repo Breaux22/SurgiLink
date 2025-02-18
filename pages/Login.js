@@ -11,19 +11,13 @@ import HeaderMenu from '../components/HeaderMenu/HeaderMenu';
 import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 function LoginPage () {
   const navigation = useNavigation();
-  // login bypass
-  /*navigation.reset({
-    index: 0,
-    routes: [{ name: "Monthly View", params: {month: new Date().getMonth(), year: new Date().getFullYear()} }],
-  });
-  */
   const [conflict, setConflict] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -31,10 +25,8 @@ function LoginPage () {
   const [forgotView, setForgotView] = useState(styles.collapsed);
   const [nfStyle, setNfStyle] = useState(styles.collapsed);
   const [sentStyle, setSentStyle] = useState(styles.collapsed);
-  const { myMemory, setMyMemory } = useMemory();
 
-  async function saveData (userInfo) {
-    setMyMemory((prev) => ({ ...prev, userInfo: userInfo }));
+ async function saveData (userInfo) {
     await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo), {
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY, // iOS security setting
     });
@@ -100,6 +92,16 @@ function LoginPage () {
     if (response.myMessage == 'Incorrect Username/Password.') {
       setConflict('Incorrect Username/Password.')
     } else {
+        /*const myData = {
+          userInfo: response.userInfo,
+          surgeons: [],
+          facilities: [],
+          trays: [],
+          trayUses: [],
+          cases: [],
+        }
+        await AsyncStorage.setItem(username, JSON.stringify(myData));*/
+      console.log(response.userInfo)
         await saveData(response.userInfo);
         navigation.reset({
           index: 0,
@@ -170,9 +172,9 @@ function LoginPage () {
               setConflict('');
             }}
             >
-            <Text style={{fontSize: width * 0.05, marginTop: width * 0.05, marginLeft: width * 0.1}}>{'<'} Back</Text>
+            <Text style={{fontSize: height * 0.025, marginTop: height * 0.025, marginLeft: width * 0.1}}>{'<'} Back</Text>
           </TouchableOpacity>
-          <Text allowFontScaling={false} style={[styles.title, {marginTop: width * 0.05}]}>Enter Your Username:</Text>
+          <Text allowFontScaling={false} style={[styles.title, {marginTop: height * 0.025}]}>Enter Your Username:</Text>
           <Text style={nfStyle}>*Username Not Recognized</Text>
           <Text style={sentStyle}>*Reset Link Sent To Email On File.</Text>
           <TextInput
@@ -184,7 +186,7 @@ function LoginPage () {
             }}
             />
           <TouchableOpacity
-            style={{marginBottom: width * 0.5, marginLeft: width * 0.5, borderWidth: width * 0.002, borderRadius: 5, width: width * 0.35, height: width * 0.1 }}
+            style={{marginBottom: width * 0.5, marginLeft: width * 0.5, borderWidth: width * 0.002, borderRadius: 5, width: width * 0.35, height: height * 0.06 }}
             onPress={() => sendRecoveryEmail()}
             >
             <Text allowFontScaling={false} style={styles.loginText}>Submit</Text>
@@ -196,11 +198,11 @@ function LoginPage () {
 
 const styles = StyleSheet.create({
   bigIcon: {
-    width: width * 0.4,
-    height: width * 0.4,
-    marginLeft: width * 0.3,
-    marginTop: width * 0.2,
-    marginBottom: width * 0.05,
+    width: height * 0.2,
+    height: height * 0.2,
+    alignSelf: "center",
+    marginTop: height * 0.1,
+    marginBottom: height * 0.025,
   },
   main: {
     width: width,
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
   },
   title: {
     marginLeft: width * 0.15,
-    marginBottom: width * 0.02,
+    marginBottom: height * 0.01,
   },  
   badUname: {
     marginLeft: width * 0.03,
@@ -222,37 +224,37 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: "#d6d6d7",
     width: width * 0.7,
-    height: width * 0.1,
+    height: height * 0.05,
     marginLeft: width * 0.15,
     marginBottom: width * 0.02,
-    padding: width * 0.02,
+    padding: height * 0.01,
     borderRadius: 5
   },
   login: {
     backgroundColor: "#d6d6d7",
     width: width * 0.3,
-    height: width * 0.1,
-    marginTop: width * 0.06,
-    marginLeft: width * 0.35,
+    height: height * 0.055,
+    marginTop: height * 0.03,
+    alignSelf: "center",
     borderRadius: 5
   },
   loginText: {
-    fontSize: width * 0.06,
-    marginLeft: width * 0.075,
-    marginTop: width * 0.01
+    fontSize: height * 0.03,
+    textAlign: "center",
+    marginTop: height * 0.009
   },
   version: {
     textAlign: "center",
     width: width
   },
   forgot: {
-    marginTop: width * 0.1,
+    marginTop: height * 0.05,
     textAlign: "center",
   },
   signUp: {
-    fontSize: width * 0.06,
-    marginLeft: width * 0.045,
-    marginTop: width * 0.01
+    fontSize: height * 0.03,
+    textAlign: "center",
+    marginTop: height * 0.01
   },
 })
 

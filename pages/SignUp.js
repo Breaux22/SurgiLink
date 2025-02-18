@@ -11,7 +11,7 @@ import HeaderMenu from '../components/HeaderMenu/HeaderMenu';
 import EntypoIcon from "react-native-vector-icons/Entypo";
 import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "react-native-reanimated";
 import { useFocusEffect } from '@react-navigation/native';
-// no need secure storage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,16 +22,35 @@ function SignUpPage () {
   const [password2, setPassword2] = useState('');
   const [email, setEmail] = useState('');
   const [org, setOrg] = useState('');
-  const [usernameConflict, setUsernameConflict] = useState('');
-  const [noMatch, setNoMatch] = useState('');
+  const [usernameConflict, setUsernameConflict] = useState(null);
+  const [noMatch, setNoMatch] = useState(null);
   const [choice, setChoice] = useState(styles.choice);
   const [plan, setPlan] = useState('');
   const [version, setVersion] = useState(styles.version1);
-  const {myMemory, setMyMemory} = useMemory();
+  const [usernameTooShort, setUsernameTooShort] = useState(null);
+  const [passwordTooShort, setPasswordTooShort] = useState(null);
+
+  function isValidEmail(email) {
+    return /\S+@\S+\.\S+/.test(email);
+  }
 
   async function createUser () {
+    setNoMatch(null);
+    setPasswordTooShort(null);
+    setUsernameTooShort(null);
+    let flag = 0;
     if (password != password2) {
       setNoMatch('Passwords Do Not Match.');
+      flag = 1;
+    } 
+    if (username.length < 8) {
+      setUsernameTooShort('Must be 8+ Characters.');
+      flag = 1;
+    } 
+    if (password.length < 8) {
+      setPasswordTooShort('Must be 8+ Characters.');
+      flag = 1;
+    } if (flag == 1) {
       return;
     } else {
       const data = {
@@ -53,15 +72,24 @@ function SignUpPage () {
       const response = await fetch(url, headers)
         .then(response => {
           if (!response.ok) {
-            console.error('Error - createUser()')
+            console.error('Error - createUser()');
           }
           return response.json()
         })
         .then(data => {return data})
-      console.log(response)
       if (response.myMessage == 'Username Already In Use.') {
         setUsernameConflict('Username Already In Use.')
       } else {
+          // user has been created
+          /*const myData = {
+            userInfo: response.data,
+            surgeons: [],
+            facilities: [],
+            trays: [],
+            trayUses: [],
+            cases: [],
+          }
+          await AsyncStorage.setItem(username, JSON.stringify(myData));*/
           navigation.reset({
             index: 0,
             routes: [{ name: "Login", params: {} }],
@@ -86,10 +114,10 @@ function SignUpPage () {
           <Text allowFontScaling={false} style={styles.loginText}>Back to Login</Text>
         </TouchableOpacity>
         <View style={styles.info}>
-          <Text allowFontScaling={false} style={styles.planStyle}>You Chose: {plan}</Text>
           <View style={styles.row}>
             <Text allowFontScaling={false} style={styles.title}>Create Username:</Text>
-            <Text allowFontScaling={false} style={styles.badUname}>{usernameConflict}</Text>
+            {usernameConflict && <Text allowFontScaling={false} style={styles.badUname}>{usernameConflict}</Text>}
+            {usernameTooShort && <Text allowFontScaling={false} style={styles.badUname}>{usernameTooShort}</Text>}
           </View>
           <TextInput
             allowFontScaling={false}
@@ -147,8 +175,7 @@ function SignUpPage () {
             <Text allowFontScaling={false} style={styles.signUpText}>Create Account</Text>
           </TouchableOpacity>
         </View>
-        <Text allowFontScaling={false} style={version}>Distributed By: Tech Breauxs, Inc</Text>
-        <Text allowFontScaling={false} style={[styles.version, {marginBottom: width * 0.35}]}>v1.0.3</Text>
+        <View style={{height: height * 0.4}}/>
       </ScrollView>
     </SafeAreaView>
   )
@@ -185,32 +212,6 @@ const styles = StyleSheet.create({
     marginLeft: width * 0.045,
     marginTop: width * 0.025
   },
-  choice: {
-    width: width,
-  },
-  choice1: {
-    backgroundColor: "#fff",
-    height: width * 0.6,
-    width: width * 0.85,
-    marginLeft: width * 0.075,
-    borderRadius: 5,
-    borderWidth: width * 0.002,
-    marginBottom: width * 0.05
-  },
-  choice2: {
-    backgroundColor: "#fff",
-    height: width * 0.6,
-    width: width * 0.85,
-    marginLeft: width * 0.075,
-    borderWidth: width * 0.002,
-    borderRadius: 5,
-  },
-  choiceName: {
-    textAlign: "center",
-    fontSize: width * 0.1,
-    fontWeight: "bold",
-    marginTop: width * 0.04
-  },
   feature: {
     textAlign: "center",
     fontSize: width * 0.06
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
   },
   title: {
     marginLeft: width * 0.15,
-    marginBottom: width * 0.02,
+    marginBottom: height * 0.01,
   },
   badUname: {
     marginLeft: width * 0.03,
@@ -236,38 +237,39 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: "#d6d6d7",
     width: width * 0.7,
-    height: width * 0.1,
-    marginLeft: width * 0.15,
-    marginBottom: width * 0.02,
-    padding: width * 0.02,
+    height: height * 0.05,
+    fontSize: height * 0.02,
+    alignSelf: "center",
+    marginBottom: height * 0.01,
+    padding: height * 0.01,
     borderRadius: 5
   },
   login: {
     backgroundColor: "#d6d6d7",
     width: width * 0.4,
-    height: width * 0.1,
-    marginTop: width * 0.06,
-    marginLeft: width * 0.3,
-    marginBottom: width * 0.1,
+    height: height * 0.05,
+    marginTop: height * 0.03,
+    alignSelf: "center",
+    marginBottom: height * 0.05,
     borderRadius: 5
   },
   loginText: {
-    fontSize: width * 0.06,
+    fontSize: height * 0.03,
     textAlign: "center",
-    marginTop: width * 0.01
+    marginTop: height * 0.005
   },
   signUp: {
     backgroundColor: "#d6d6d7",
     width: width * 0.5,
-    height: width * 0.1,
+    height: height * 0.05,
     marginTop: width * 0.06,
-    marginLeft: width * 0.25,
+    alignSelf: "center",
     borderRadius: 5
   },
   signUpText: {
-    fontSize: width * 0.06,
-    marginLeft: width * 0.055,
-    marginTop: width * 0.01
+    fontSize: height * 0.03,
+    textAlign: "center",
+    marginTop: height * 0.005
   },
   version: {
     textAlign: "center",

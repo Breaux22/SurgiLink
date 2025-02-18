@@ -9,7 +9,6 @@ import FullCaseData from '../../components/FullCaseData/FullCaseData';
 import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -28,7 +27,6 @@ const ListPage = () => {
     const [usesComp, setUsesComp] = useState(null);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [styleList, setStyleList] = useState([]);
-    const { myMemory, setMyMemory } = useMemory();
     const [currTrayObj, setCurrTrayObj] = useState();
     const [currTray, setCurrTray] = useState('');
     const [location, setLocation] = useState('');
@@ -42,10 +40,6 @@ const ListPage = () => {
     const [styleC, setStyleC] = useState(styles.prevR);
     const [newTray, setNewTray] = useState(false);
     const [newTrayText, setNewTrayText] = useState('');
-    
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-    };
 
     async function makeStyleList (list) {
         var tempArr = list.map((item) => (styles.collapsed))
@@ -53,7 +47,7 @@ const ListPage = () => {
     }
 
     async function sessionVerify () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
@@ -85,7 +79,7 @@ const ListPage = () => {
     }
 
     async function logout () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             username: userInfo.username,
             sessionString: userInfo.sessionString,
@@ -151,7 +145,7 @@ const ListPage = () => {
     }
 
     async function addTray () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -177,7 +171,7 @@ const ListPage = () => {
     }
 
     async function getTrays () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -205,7 +199,7 @@ const ListPage = () => {
     }
 
     async function getTrayUses () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -233,7 +227,7 @@ const ListPage = () => {
     }
 
     async function updateTrayLocation (index) {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             trayId: currTrayObj.id,
             userId: userInfo.id,
@@ -261,7 +255,7 @@ const ListPage = () => {
     }
 
     async function updateTrayName () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             trayId: currTrayObj.id,
             newName: currTray,
@@ -451,29 +445,31 @@ const ListPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1, }}
-                onPress={() => {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{name: 'Create New Case', params: {backTo: {name: 'List Trays', params: {month: month, year: year}}}}]
-                    })
-                }}
-                >
-                <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
-            </TouchableOpacity>
-            <View style={styles.menuButtons}>
-                <TouchableOpacity 
-                    style={{width: width * 0.2, }}
-                    onPress={openMenu}
-                    >
-                    <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
-                </TouchableOpacity>
+            <View style={styles.row}>
+                <View style={styles.menuButtons}>
+                    <TouchableOpacity 
+                        style={{width: width * 0.2, }}
+                        onPress={openMenu}
+                        >
+                        <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{width: width * 0.2, }}
+                        onPress={closeMenu}
+                        >
+                        <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                    style={{width: width * 0.2, }}
-                    onPress={closeMenu}
+                    style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                    onPress={() => {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: month, year: year}}}}]
+                        })
+                    }}
                     >
-                    <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -1078,6 +1074,7 @@ const ListPage = () => {
         borderBottomWidth: width * 0.002,
         borderBottomColor: "#cfcfcf",
         height: width * 0.124,
+        width: width,
         flexDirection: "row",
     },
     collapsed: {

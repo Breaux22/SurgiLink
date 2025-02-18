@@ -9,7 +9,6 @@ import FullCaseData from '../../components/FullCaseData/FullCaseData';
 import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -29,7 +28,6 @@ const ListPage = () => {
     const [cases, setCases] = useState([]);
     const [filteredCases, setFilteredCases] = useState([]);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
-    const { myMemory, setMyMemory } = useMemory();
     const [surgeons, setSurgeons] = useState([]);
     const [facilities, setFacilities] = useState([]);
     const [lButText, setLButText] = useState('None');
@@ -43,12 +41,8 @@ const ListPage = () => {
     const [rBoxStyles, setRBoxStyles] = useState([]);
     const [filterBy, setFilterBy] = useState([]);
 
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
-    };
-
     async function sessionVerify () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
@@ -80,7 +74,7 @@ const ListPage = () => {
     }
 
     async function logout () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             username: userInfo.username,
             sessionString: userInfo.sessionString,
@@ -105,7 +99,7 @@ const ListPage = () => {
     }
 
     async function getSurgeons () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -131,7 +125,7 @@ const ListPage = () => {
     }
 
     async function getFacilities () {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -372,29 +366,31 @@ const ListPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <TouchableOpacity
-                style={{position: "absolute", marginLeft: width * 0.89, marginTop: width * 0.125, zIndex: 1}}
-                onPress={() => {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{name: 'Create New Case', params: {backTo: {name: 'List Cases', params: {month: month, year: year}}}}]
-                    })
-                }}
-                >
-                <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
-            </TouchableOpacity>
-            <View style={styles.menuButtons}>
-                <TouchableOpacity 
-                    style={{width: width * 0.2, }}
-                    onPress={openMenu}
-                    >
-                    <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
-                </TouchableOpacity>
+            <View style={styles.row}>
+                <View style={styles.menuButtons}>
+                    <TouchableOpacity 
+                        style={{width: width * 0.2, }}
+                        onPress={openMenu}
+                        >
+                        <Image source={require('../../assets/icons/menu.png')} style={openStyle}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{width: width * 0.2, }}
+                        onPress={closeMenu}
+                        >
+                        <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                    style={{width: width * 0.2, }}
-                    onPress={closeMenu}
+                    style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                    onPress={() => {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{name: 'Create New Case', params: {backTo: {name: 'Monthly View', params: {month: month, year: year}}}}]
+                        })
+                    }}
                     >
-                    <Image source={require('../../assets/icons/close.png')} style={closeStyle}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -496,7 +492,7 @@ const ListPage = () => {
             </View>
             <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.955, height: width * 0.1, marginLeft: width * 0.025, }]}>
                 <TouchableOpacity
-                    style={{width: width * 0.315, height: width * 0.08, backgroundColor: "#ededed", marginLeft: width * 0.02, borderRadius: 5, }}
+                    style={{width: width * 0.34, height: width * 0.08, backgroundColor: "#ededed", marginLeft: width * 0.02, borderRadius: 5, }}
                     onPress={() => {
                         // open or close left box [DONE]
                         // set filterBy to []
@@ -940,6 +936,7 @@ const ListPage = () => {
           borderBottomWidth: width * 0.002,
           borderBottomColor: "#cfcfcf",
           height: width * 0.124,
+          width: width,
           flexDirection: "row",
       },
       collapsed: {

@@ -11,7 +11,6 @@ import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
-import { useMemory } from '../../MemoryContext';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -49,7 +48,6 @@ function CasePage () {
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [backStyle, setBackStyle] = useState(styles.back);
-    const { myMemory, setMyMemory } = useMemory();
     const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
@@ -76,10 +74,6 @@ function CasePage () {
             setMftStyle(styles.collapsed);
             setFacilityStyle(styles.collapsed);
         }, 3000);
-    };
-
-    async function saveData (userInfo) {
-        setMyMemory((prev) => ({ ...prev, userInfo: userInfo })); // Store in-memory data
     };
 
     async function openMenu() {
@@ -205,7 +199,7 @@ function CasePage () {
     }
 
     async function getSurgeons() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -230,7 +224,7 @@ function CasePage () {
     }
 
     async function getFacilities() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -255,7 +249,7 @@ function CasePage () {
     }
 
     async function getMyTrays() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
             sessionString: userInfo.sessionString,
@@ -305,7 +299,7 @@ function CasePage () {
     }*/
 
     async function addSurgeonToDB() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             surgeonName: surgeonText,
             userId: userInfo.id,
@@ -333,7 +327,7 @@ function CasePage () {
     }
 
     async function addFacilityToDB() {
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             facilityName: facilityText,
             userId: userInfo.id,
@@ -361,7 +355,7 @@ function CasePage () {
     }
 
       async function addLoanerToDB() {
-          const userInfo = await getSecureStorage('userInfo');
+          const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
           const data = {
               trayName: loanerName,
               userId: userInfo.id,
@@ -417,7 +411,7 @@ function CasePage () {
                 tempArr2.push(item.id);
             }
         })
-        const userInfo = await getSecureStorage('userInfo');
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const caseData = {
             dateString: new Date(surgdate - (1000*60*60*8)),
             surgDate: new Date(surgdate - (1000*60*60*8)),
