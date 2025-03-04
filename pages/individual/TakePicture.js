@@ -8,11 +8,13 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { Cloudinary } from "@cloudinary/url-gen";
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 export default function CameraPage({ navigation, caseId }) {
   const route = useRoute();
+  const styles = myStyles(useSafeAreaInsets());
   const myCaseId = route.params?.caseId;
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
@@ -80,6 +82,7 @@ export default function CameraPage({ navigation, caseId }) {
     const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
       const data = {
           userId: userInfo.id,
+            org: userInfo.org,
           sessionString: userInfo.sessionString,
       }
       const headers = {
@@ -89,7 +92,7 @@ export default function CameraPage({ navigation, caseId }) {
           },
           'body': JSON.stringify(data)
       }
-      const url = 'https://surgiflow.replit.app/getCloudinaryCreds';
+      const url = 'https://SurgiLink.replit.app/getCloudinaryCreds';
       const response = await fetch(url, headers)
           .then(response => {
               if (!response.ok) {
@@ -154,13 +157,13 @@ export default function CameraPage({ navigation, caseId }) {
               <Image source={require('../../assets/icons/thunder.png')} style={styles.icon} />
             </TouchableOpacity>
         </View>
-        <TouchableOpacity style={shutterStyle} onPress={takeImage}>
+        <TouchableOpacity style={[shutterStyle, {alignSelf: "center"}]} onPress={takeImage}>
             <Image source={require('../../assets/icons/circle.png')} style={styles.bigIcon} />
         </TouchableOpacity>
-          {loadingStyle == true && <View style={{position: "absolute", width: width, height: height * 0.9, backgroundColor: "#fff"}}><Image source={require('../../assets/icons/loading.gif')} style={{width: width * 0.5, height: width * 0.5, marginLeft: width * 0.25, marginTop: width * 0.5, }}/></View>}
+          {loadingStyle == true && <View style={[styles.camera, {backgroundColor: "#fff"}]}><Image source={require('../../assets/icons/loading.gif')} style={{width: height * 0.25, height: height * 0.25, alignSelf: "center", marginTop: height * 0.25, }}/></View>}
           {image && <Image 
                       source={{ uri: image }} 
-                      style={{width: width, height: height * 0.9, resizeMode: 'contain',}} 
+                      style={styles.camera} 
                     />}
         <TouchableOpacity style={retakeStyle} onPress={() => {
           setShutterStyle(styles.snap);
@@ -179,7 +182,7 @@ export default function CameraPage({ navigation, caseId }) {
   );
 }
 
-const styles = StyleSheet.create({
+const myStyles = (insets) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -187,7 +190,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#fff",
     width: width,
-    height: width * 0.1,
+    height: height * 0.05,
   },
   scrollView: {
     flex: 1,
@@ -201,13 +204,13 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: "rgba(0, 122, 255, 0.8)",
-    fontSize: width * 0.05,
-    marginTop: width * 0.02,
+    fontSize: height * 0.025,
+    marginTop: height * 0.01,
     marginLeft: width * 0.02
   },
   camera: {
     width: width,
-    height: height * 0.9
+    height: height * 0.95 - insets.top,
   },
   buttonContainer: {
     flex: 1,
@@ -232,9 +235,9 @@ const styles = StyleSheet.create({
   },
   retakeText: {
     color: "#fff",
-    fontSize: width * 0.07,
+    fontSize: height * 0.035,
     marginTop: 5,
-    marginLeft: width * 0.02
+    textAlign: "center",
   },
   keep: {
     backgroundColor: "rgba(240, 228, 230, 0.75)",
@@ -247,9 +250,9 @@ const styles = StyleSheet.create({
     zIndex: 1
   },
   keepText: {
-    fontSize: width * 0.07,
+    fontSize: height * 0.035,
     marginTop: 5,
-    marginLeft: width * 0.05
+    textAlign: "center",
   },
   text: {
     fontSize: 24,
@@ -260,25 +263,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   },
   icon: {
-    width: 50,
-    height: 50,
+    width: height * 0.05,
+    height: height * 0.05,
   },
   bigIcon: {
-    width: 100,
-    height: 100
+    width: height * 0.1,
+    height: height * 0.1,
   },
   icon1: {
-    marginLeft: 20,
-    marginTop: 20,
+    marginLeft: height * 0.01,
+    marginTop: height * 0.01,
   },
   icon2: {
-    marginTop: 20,
-    marginLeft: 250
+    marginTop: height * 0.01,
+    position: "absolute",
+    right: height * 0.01,
   },
   snap: {
     position: "absolute",
-    width: width * 0.1,
-    marginLeft: width * 0.37,
-    marginTop: height * 0.75,
+    top: height * 0.75,
   },
 });

@@ -10,6 +10,7 @@ import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,12 +21,14 @@ const { width, height } = Dimensions.get('window');
 const ListPage = () => {
     const route = useRoute();
     const navigation = useNavigation();
+    const styles = myStyles(useSafeAreaInsets());
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
     const [openStyle, setOpenStyle] = useState(styles.icon3);
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [month, setMonth] = useState(route.params?.month || new Date().getMonth());
     const [year, setYear] = useState(route.params?.year || new Date().getFullYear());
     const [cases, setCases] = useState([]);
+    const [masterData, setMasterData] = useState([]);
     const [filteredCases, setFilteredCases] = useState([]);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [surgeons, setSurgeons] = useState([]);
@@ -40,6 +43,22 @@ const ListPage = () => {
     const [rBoxData, setRBoxData] = useState([]);
     const [rBoxStyles, setRBoxStyles] = useState([]);
     const [filterBy, setFilterBy] = useState([]);
+    // filters cases by user
+    const [userList, setUserList] = useState();
+    const [userListStyle, setUserListStyle] = useState(styles.collapsed);
+    const [filterValue, setFilterValue] = useState(null);
+    const [currUser, setCurrUser] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+            const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+            setFilterValue(JSON.stringify({id: userInfo.id, username: 'Everyone'}));
+            setCurrUser(userInfo);
+            const userArr = JSON.parse(userInfo.userList);
+            setUserList(userArr);
+        })();
+        return;
+    }, [])
 
     async function sessionVerify () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
@@ -55,7 +74,7 @@ const ListPage = () => {
           },
           'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
+        const response = await fetch('https://SurgiLink.replit.app/verifySession', headers)
           .then(response => {
                 if (!response.ok){
                     console.error("Error - sessionVerify()")
@@ -63,7 +82,6 @@ const ListPage = () => {
                 return response.json()
             })
           .then(data => {return data})
-
         if (response.myMessage == 'Invalid Session.') {
             navigation.reset({
               index: 0,
@@ -87,7 +105,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/logout';
+        const url = 'https://SurgiLink.replit.app/logout';
         const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
@@ -102,6 +120,7 @@ const ListPage = () => {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -111,7 +130,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getSurgeons';
+        const url = 'https://SurgiLink.replit.app/getSurgeons';
         const response = await fetch(url, headers)
         .then(response => {
                 if (!response.ok){
@@ -128,6 +147,7 @@ const ListPage = () => {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -137,7 +157,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getFacilities';
+        const url = 'https://SurgiLink.replit.app/getFacilities';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -151,7 +171,7 @@ const ListPage = () => {
 
     async function openMenu() {
         setOpenStyle(styles.collapsed);
-        setCloseStyle(styles.closeIcon);
+        setCloseStyle(styles.icon3);
         setMenuStyle(styles.menu);
         setBackBlur(styles.backBlur);
     }
@@ -191,11 +211,13 @@ const ListPage = () => {
     }
 
     async function getCases (year, month) {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             surgYear: year, 
             months: month,
-            userId: myMemory.userInfo.id,
-            sessionString: myMemory.userInfo.sessionString,
+            userId: userInfo.id,
+            org: userInfo.org,
+            sessionString: userInfo.sessionString,
         }
         const headers = {
             'method': 'POST',
@@ -204,7 +226,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getCases';
+        const url = 'https://SurgiLink.replit.app/getCases';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -212,12 +234,21 @@ const ListPage = () => {
                 }
                 return response.json()
             })
-            .then(data => {
-                setCases(prev => data);
-            })
+            .then(data => {return data})
         const tempArr = [...response];
+        setMasterData(tempArr);
         tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
-        setCases(tempArr);
+        if (filterValue) {
+            const myObj = JSON.parse(filterValue);
+            if (myObj.username == 'Everyone') {
+                setCases(tempArr);
+            } else {
+                let newArr = tempArr.filter((value, index) => value.userId == myObj.id);
+                setCases(newArr);
+            }
+        } else {
+            setCases(prev => tempArr);
+        }
     }
 
     function formatDate(dateInput) {
@@ -243,30 +274,24 @@ const ListPage = () => {
         }
     }
 
+    async function displayRepName(repId) {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+        if (repId == userInfo.id) {
+            return userInfo.username;
+        } else {
+            const filterUser = userList.filter((item) => item.id == repId);
+            return filterUser[0].username;
+        }
+    }
+
     function fillRightBoxData (choice) {
         if (choice == 'None') {
-            // set filtered cases to all cases
-            // set left button text to none
-            // hide left box
-            // hide right button
-            // hide right box
-            // [DONE]
             setFilteredCases(prev => cases);
             setLButText(prev => 'None');
             setLBoxStyle(prev => styles.collapsed);
             setRButStyle(prev => styles.collapsed);
             setRBoxStyle(prev => styles.collapsed);
         } else if (choice == 'Surgeons') {
-            // set filtered cases to all cases (assume coming from a different filter)
-            // set filterBy to []
-            // set left button text to surgeons
-            // hide left box
-            // show right button
-            // set right button text to none selected
-            // show right box
-            // set right box data to surgeons (as it comes from the server)
-            // make rBoxStyles
-            // [DONE]
             setFilteredCases(prev => cases);
             setFilterBy(prev => []);
             setLButText(prev => 'Surgeons');
@@ -279,16 +304,6 @@ const ListPage = () => {
             surgeons.map(() => (tempArr.push(styles.buttonLight)));
             setRBoxStyles(prev => tempArr);
         } else if (choice == 'Facilities') {
-            // set filtered cases to all cases (assume coming from a different filter)
-            // set filterBy to []
-            // set left button text to facilities
-            // hide left box
-            // show right button
-            // set right button text to none selected
-            // show right box
-            // set right box data to facilities (as it comes from the server)
-            // make rBoxStyles
-            // [DONE]
             setFilteredCases(prev => cases);
             setFilterBy(prev => []);
             setLButText(prev => 'Facilities');
@@ -302,6 +317,16 @@ const ListPage = () => {
             setRBoxStyles(prev => tempArr);
         }
         return;
+    }
+
+    async function filterCases (myId, myUsername) {
+        if (myUsername == 'Everyone') {
+            setCases(masterData);
+        } else {
+            let tempArr = [...masterData];
+            let newArr = tempArr.filter((item, index) => item.rep == myId);
+            setCases(newArr);
+        }
     }
 
     function myFilter () {
@@ -330,7 +355,6 @@ const ListPage = () => {
 
     useEffect(() => {
         if (filterBy.length > 0) {
-            // update filteredCases
             setRButText(filterBy.length);
             myFilter();
         } else {
@@ -359,13 +383,13 @@ const ListPage = () => {
             caseArray = await caseArray.sort((a,b) => new Date(a.dateString) - new Date(b.dateString));
             setCases(oldCases => caseArray);
         })();
-
         return () => {
         };
     }, []);
 
     return (
         <SafeAreaView style={styles.container}>
+            <Image source={require('../../assets/icons/surgilink-logo.png')} resizeMode="contain" style={{position: "absolute", marginTop: useSafeAreaInsets().top, alignSelf: "center", height: height * 0.05,}}/>
             <View style={styles.row}>
                 <View style={styles.menuButtons}>
                     <TouchableOpacity 
@@ -382,7 +406,7 @@ const ListPage = () => {
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity
-                    style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                    style={{position: "absolute", right: width * 0.01, marginTop: height * 0.005, zIndex: 1, }}
                     onPress={() => {
                         navigation.reset({
                             index: 0,
@@ -390,7 +414,7 @@ const ListPage = () => {
                         })
                     }}
                     >
-                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: height * 0.045, height: height * 0.045, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -466,9 +490,9 @@ const ListPage = () => {
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
-                <View style={backBlur}></View>
+                <TouchableOpacity style={backBlur} onPress={() => closeMenu()}/>
             </View>
-            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.955, borderTopLeftRadius: 5, borderTopRightRadius: 5, marginTop: width * 0.025, marginLeft: width * 0.025}]}>
+            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.96, borderTopLeftRadius: 5, borderTopRightRadius: 5, marginTop: height * 0.0125, marginLeft: width * 0.02, paddingBottom: height * 0.005,}]}>
                 <View>
                     <Text allowFontScaling={false} style={styles.monthYear}>{convertMonthToString(month)}</Text>
                     <Text allowFontScaling={false} style={styles.monthYear}>{year}</Text>
@@ -490,14 +514,28 @@ const ListPage = () => {
                     <Image source={require('../../assets/icons/right-arrow.png')} style={styles.arrowIcon2}/>
                 </TouchableOpacity>
             </View>
-            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.955, height: width * 0.1, marginLeft: width * 0.025, }]}>
+            <View style={{backgroundColor: "#333436", width: width * 0.96, marginLeft: width * 0.02,}}>
                 <TouchableOpacity
-                    style={{width: width * 0.34, height: width * 0.08, backgroundColor: "#ededed", marginLeft: width * 0.02, borderRadius: 5, }}
+                    style={{width: height * 0.19, height: height * 0.04, backgroundColor: "#ededed", marginLeft: height * 0.01, borderRadius: 5, marginBottom: height * 0.01, paddingLeft: height * 0.01, paddingRight: height * 0.01,}}
                     onPress={() => {
-                        // open or close left box [DONE]
-                        // set filterBy to []
+                        if (JSON.stringify(userListStyle) == JSON.stringify(styles.collapsed)) {
+                            setUserListStyle({width: width, height: height * 0.25,});
+                        } else {
+                            setUserListStyle(styles.collapsed);
+                        }
+                        setLBoxStyle(styles.collapsed);
+                        setRBoxStyle(styles.collapsed);
+                    }}
+                    >
+                    <Text allowFontScaling={false} numberOfLines={1} ellipsizeMode="tail" style={{marginTop: height * 0.009, textAlign: "center", }}>Calendar: {filterValue && JSON.parse(filterValue).username}</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={[styles.row, {backgroundColor: "#333436", width: width * 0.96, height: height * 0.05, marginLeft: width * 0.02, }]}>
+                <TouchableOpacity
+                    style={{width: height * 0.165, height: height * 0.04, backgroundColor: "#ededed", marginLeft: height * 0.01, borderRadius: 5, }}
+                    onPress={() => {
                         setFilterBy(prev => []);
-                        if (lBoxStyle == styles.collapsed) {
+                        if (JSON.stringify(lBoxStyle) === JSON.stringify(styles.collapsed)) {
                             setLBoxStyle(prev => styles.lBox);
                             setRBoxStyle(prev => styles.collapsed);
                         } else {
@@ -505,13 +543,12 @@ const ListPage = () => {
                         }
                     }}
                     >
-                    <Text allowFontScaling={false} style={{marginTop: width * 0.018, textAlign: "center", }}>filter: by {lButText}</Text>
+                    <Text allowFontScaling={false} numberOfLines={1} ellipsizeMode="tail" style={{marginTop: height * 0.009, textAlign: "center", }}>filter: by {lButText}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={rButStyle}
                     onPress={() => {
-                        // open or close right box [DONE]
-                        if (rBoxStyle == styles.collapsed) {
+                        if (JSON.stringify(rBoxStyle) == JSON.stringify(styles.collapsed)) {
                             setRBoxStyle(prev => styles.rBox);
                             setLBoxStyle(prev => styles.collapsed);
                         } else {
@@ -519,36 +556,33 @@ const ListPage = () => {
                         }
                     }}
                     >
-                    <Text allowFontScaling={false} style={{textAlign: "center", marginTop: width * 0.018}}>{rButText} Selected</Text>
+                    <Text allowFontScaling={false} style={{textAlign: "center", marginTop: height * 0.009}}>{rButText} Selected</Text>
                 </TouchableOpacity>
             </View>
             <View style={lBoxStyle}>
                 <TouchableOpacity
-                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    style={{width: height * 0.16, height: height * 0.04, borderRadius: 2.5, marginLeft: height * 0.01125, marginTop: height * 0.01, borderWidth: height * 0.0015, }}
                     onPress={() => {
-                        // set left box to none [DONE]
                         fillRightBoxData('None');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>None</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>None</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    style={{width: height * 0.16, height: height * 0.04, borderRadius: 2.5, marginLeft: height * 0.01125, marginTop: height * 0.01, borderWidth: height * 0.0015, }}
                     onPress={() => {
-                        // set left box to surgeons [DONE]
                         fillRightBoxData('Surgeons');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>Surgeons</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>Surgeons</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={{width: width * 0.45, height: width * 0.08, borderRadius: 5, marginLeft: width * 0.0225, marginTop: width * 0.02, borderWidth: width * 0.003, }}
+                    style={{width: height * 0.16, height: height * 0.04, borderRadius: 2.5, marginLeft: height * 0.01125, marginTop: height * 0.01, borderWidth: height * 0.0015, }}
                     onPress={() => {
-                        // set left box to facilities [DONE]
                         fillRightBoxData('Facilities');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, textAlign: "center", marginTop: width * 0.005, }}>Facilities</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>Facilities</Text>
                 </TouchableOpacity>
             </View>
             <View style={rBoxStyle}>
@@ -556,19 +590,12 @@ const ListPage = () => {
                     <TouchableOpacity
                         key={item.surgeonName || item.facilityName}
                         onPress={() => {
-                            if (rBoxStyles[index] == styles.buttonLight) {
-                                // select filter button
-                                // update
-                                // add to filterBy
-                                // update right button text
+                            if (JSON.stringify(rBoxStyles[index]) == JSON.stringify(styles.buttonLight)) {
                                 let tempArr = [...rBoxStyles];
                                 tempArr[index] = styles.buttonDark;
                                 setRBoxStyles(prev => tempArr);
-                                setFilterBy(prev => [...prev, rBoxData[index]]) // filterBy has surgeon/facility object, not just the name
+                                setFilterBy(prev => [...prev, rBoxData[index]])
                             } else {
-                                // deselect filter button
-                                // remove from filterBy
-                                // update right button text
                                 let tempArr = [...rBoxStyles];
                                 tempArr[index] = styles.buttonLight;
                                 setRBoxStyles(prev => tempArr);
@@ -588,7 +615,7 @@ const ListPage = () => {
                             }
                         }}
                         >
-                        <Text allowFontScaling={false} style={rBoxStyles[index]}>{lButText == 'Surgeons' ? item.surgeonName : item.facilityName}</Text>
+                        <Text allowFontScaling={false} numberOfLines={1} ellipsizeMode="tail" style={rBoxStyles[index]}>{lButText == 'Surgeons' ? item.surgeonName : item.facilityName}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -600,14 +627,29 @@ const ListPage = () => {
                     <Text allowFontScaling={false} style={styles.columnText}>Surgeon</Text>
                 </View>
                 <View style={styles.cell}>
-                    <Text allowFontScaling={false} style={styles.columnText}>Facility</Text>
+                    <Text allowFontScaling={false} style={styles.columnText}>Facility & Rep</Text>
                 </View>
                 <View style={styles.cell}>
                     <Text allowFontScaling={false} style={styles.columnText}>Procedure</Text>
                 </View>
             </View>
+            <Picker
+                selectedValue={filterValue && filterValue}
+                onValueChange={(itemValue) => {
+                    setFilterValue(itemValue);
+                    setUserListStyle(styles.collapsed);
+                    filterCases(JSON.parse(itemValue).id, JSON.parse(itemValue).username);
+                }}
+                style={userListStyle}
+            >        
+                <Picker.Item label={'Everyone'} value={currUser && JSON.stringify({id: currUser.org, username: 'Everyone'})} />
+                <Picker.Item label={currUser && currUser.username} value={currUser && JSON.stringify(currUser)} />
+                {userList && userList.map((item, index) => (
+                    <Picker.Item key={item.username + "A" + index} label={item.username} value={JSON.stringify(item)} />
+                ))}
+            </Picker>
             <ScrollView style={styles.grid}>
-                <View style={{width: width * 0.955, marginLeft: width * 0.025, borderRightWidth: width * 0.002, borderTopWidth: width * 0.002,}}>
+                <View style={{width: width * 0.96, marginLeft: width * 0.02, borderRightWidth: height * 0.001, borderTopWidth: height * 0.001,}}>
                     {filteredCases.map((myCase, index) => (
                         <TouchableOpacity 
                             key={myCase.surgdate + index} 
@@ -619,17 +661,17 @@ const ListPage = () => {
                                 });
                             }}
                         >
-                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: height * 0.001, borderBottomWidth: height * 0.001, width: width * 0.2398, padding: height * 0.005,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{formatDate(myCase.dateString)}</Text>
                                 <Text allowFontScaling={false} style={styles.cellText}>{convertTo12HourTime(myCase.dateString.slice(11,16))}</Text>
                             </View>
-                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: height * 0.001, borderBottomWidth: height * 0.001, width: width * 0.2398, padding: height * 0.005,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.surgeonName}</Text>
                             </View>
-                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
-                                <Text allowFontScaling={false} style={styles.cellText}>{myCase.facilityName}</Text>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: height * 0.001, borderBottomWidth: height * 0.001, width: width * 0.2398, padding: height * 0.005,}}>
+                                <Text allowFontScaling={false} style={styles.cellText}>@{myCase.facilityName} {'\n'}Rep: {displayRepName(myCase.rep)}</Text>
                             </View>
-                            <View style={{backgroundColor: myCase.color, borderLeftWidth: width * 0.002, borderBottomWidth: width * 0.002, width: width * 0.238, padding: width * 0.01,}}>
+                            <View style={{backgroundColor: myCase.color, borderLeftWidth: height * 0.001, borderBottomWidth: height * 0.001, width: width * 0.2398, padding: height * 0.005,}}>
                                 <Text allowFontScaling={false} style={styles.cellText}>{myCase.proctype}</Text>
                             </View>
                         </TouchableOpacity>
@@ -641,54 +683,54 @@ const ListPage = () => {
     );
   };
 
-  const styles = StyleSheet.create({
+  const myStyles = (insets) => StyleSheet.create({
       rButton: {
-          width: width * 0.315,
-          height: width * 0.08,
-          marginLeft: width * 0.02,
+          width: height * 0.15,
+          height: height * 0.04,
+          marginLeft: height * 0.01,
           backgroundColor: "#ededed",
           borderRadius: 5,
       },
       buttonLight: {
-          width: width * 0.45,
-          height: width * 0.08,
-          borderRadius: 5,
-          borderWidth: width * 0.003,
-          paddingTop: width * 0.011,
-          marginTop: width * 0.01,
+          width: height * 0.18,
+          height: height * 0.04,
+          borderRadius: 2.5,
+          borderWidth: height * 0.0015,
+          paddingTop: height * 0.0055,
+          marginTop: height * 0.005,
           textAlign: 'center',
       },
       buttonDark: {
-        width: width * 0.45,
-        height: width * 0.08,
-        borderRadius: 5,
-        borderWidth: width * 0.003,
-        paddingTop: width * 0.011,
-        marginTop: width * 0.01,
+        width: height * 0.18,
+        height: height * 0.04,
+        borderRadius: 2.5,
+        borderWidth: height * 0.0015,
+        paddingTop: height * 0.0055,
+        marginTop: height * 0.005,
         backgroundColor: "#333436",
         color: "#fff",
         textAlign: "center",
       },
       lBox: {
           position: "absolute",
-          width: width * 0.5,
-          height: width * 0.33,
+          width: height * 0.185,
+          height: height * 0.165,
           backgroundColor: "#ededed",
-          marginTop: width * 0.52,
-          marginLeft: width * 0.04,
+          top: insets.top + height * 0.26,
+          left: width * 0.02 + height * 0.01,
           borderRadius: 5,
-          borderWidth: width * 0.003,
+          borderWidth: height * 0.0015,
           zIndex: 1
       },
       rBox: {
           position: "absolute",
-          width: width * 0.5,
-          padding: width * 0.02,
+          width: height * 0.205,
+          padding: height * 0.01,
           backgroundColor: "#ededed",
-          marginTop: width * 0.52,
-          marginLeft: width * 0.38,
+          top: insets.top + height * 0.26,
+          left: width * 0.02 + height * 0.185,
           borderRadius: 5,
-          borderWidth: width * 0.003,
+          borderWidth: height * 0.0015,
           zIndex: 1
       },
       container: {
@@ -705,94 +747,97 @@ const ListPage = () => {
       new: {
           backgroundColor: "#8a8a8a",
           width: width * 0.17,
-          height: width * 0.17,
+          height: height * 0.085,
           marginLeft: width * 0.36,
-          marginTop: - width * 0.045,
+          marginTop: - height * 0.0225,
           borderRadius: 5,
       },
       newText: {
           color: "#fefefe",
-          fontSize: width * 0.18,
-          marginTop: - width * 0.035,
+          fontSize: height * 0.09,
+          marginTop: - height * 0.0175,
           marginLeft: width * 0.035
       },
       monthYear: {
           color: "#4fd697",
           fontWeight: "bold",
-          fontSize: width * 0.07,
-          marginLeft: width * 0.025,
+          fontSize: height * 0.035,
+          marginLeft: height * 0.01,
           width: width * 0.485, 
       },
       arrow: {
           backgroundColor: "rgba(0, 122, 255, 0.9)",
-          width: width * 0.2,
-          height: width * 0.1,
+          width: height * 0.1,
+          height: height * 0.05,
           borderRadius: 5,
-          marginTop: width * 0.025
+          marginTop: height * 0.0125,
+          position: "absolute",
+          right: height * 0.12,
       },
       arrow2: {
           backgroundColor: "rgba(0, 122, 255, 0.9)",
-          width: width * 0.2,
-          height: width * 0.1,
+          width: height * 0.1,
+          height: height * 0.05,
           borderRadius: 5,
-          marginTop: width * 0.025,
-          marginLeft: width * 0.025,
+          marginTop: height * 0.0125,
+          position: "absolute",
+          right: height * 0.01,
       },
       arrowIcon: {
-          width: width * 0.06,
-          height: width * 0.06,
-          marginLeft: width * 0.06,
-          marginTop: width * 0.02
+          width: height * 0.03,
+          height: height * 0.03,
+          marginLeft: height * 0.03,
+          marginTop: height * 0.01
       },      
       arrowIcon2: {
-            width: width * 0.06,
-            height: width * 0.06,
-            marginLeft: width * 0.075,
-            marginTop: width * 0.02
+        width: height * 0.03,
+        height: height * 0.03,
+        marginLeft: height * 0.0375,
+        marginTop: height * 0.01
       },
       grid: {
           width: width * 0.985,
       },
       columns: {
           flexDirection: 'row',
-          marginLeft: width * 0.025,
+          marginLeft: width * 0.02,
           backgroundColor: "#717475",
-          width: width * 0.955
+          width: width * 0.96
       },
       columnText: {
           color: "#ffffff",
-          fontSize: width * 0.04,
+          fontSize: height * 0.018,
           fontWeight: "bold",
       },
       cell: {
-          borderLeftWidth: width * 0.002,
-          borderBottomWidth: width * 0.002,
-          width: width * 0.238,
-          padding: width * 0.01,
+          borderLeftWidth: height * 0.001,
+          borderBottomWidth: height * 0.001,
+          width: width * 0.2399,
+          padding: height * 0.005,
       },
       cellDark: {
-          borderLeftWidth: width * 0.002,
-          borderBottomWidth: width * 0.002,
+          borderLeftWidth: height * 0.001,
+          borderBottomWidth: height * 0.001,
           width: width * 0.238,
-          padding: width * 0.01,
+          padding: height * 0.005,
           backgroundColor: "#d4d6d6",
       },
       cellText: {
-          fontSize: width * 0.035,
+          fontSize: height * 0.0175,
       },
       tzPicker: {
-        fontSize: width * 0.01  
+        fontSize: height * 0.005
       },
       title: {
           color: "#292c3b",
           marginLeft: width * 0.02,
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
       },
       body: {
           color: "#292c3b",
           marginLeft: width * 0.02,
-          marginTop: width * 0.01,
-          fontSize: width * 0.03
+          marginTop: height * 0.005,
+          fontSize: height * 0.015
       },
       textInput: {
           color: "#39404d"
@@ -800,26 +845,26 @@ const ListPage = () => {
       expandingTextInput: {
           width: width * 0.98,
           marginLeft: width * 0.02,
-          marginTop: width * 0.01,
-          padding: width * 0.01,
+          marginTop: height * 0.005,
+          padding: height * 0.005,
           borderRadius: 5,
           backgroundColor: '#ededed'
       },
       textBox: {
           width: width * 0.96,
-          height: width * 0.08,
+          height: height * 0.04,
           marginLeft: width * 0.02,
-          marginTop: width * 0.01,
-          padding: width * 0.02,
+          marginTop: height * 0.005,
+          padding: height * 0.01,
           borderRadius: 5,
           backgroundColor: '#ededed'
       },
       bigTextBox: {
           width: width * 0.96,
-          height: width * 0.2,
+          height: height * 0.1,
           marginLeft: width * 0.02,
-          marginTop: width * 0.01,
-          padding: width * 0.02,
+          marginTop: height * 0.005,
+          padding: height * 0.01,
           borderRadius: 5,
           backgroundColor: '#ededed'
       },
@@ -829,59 +874,59 @@ const ListPage = () => {
       largeButton: {
           backgroundColor: '#ededed',
           width: width * 0.4,
-          height: width * 0.1,
+          height: height * 0.05,
           borderRadius: 5,
           marginLeft: width * 0.025,
-          marginTop: width * 0.015
+          marginTop: height * 0.0075
       },
       button: {
           backgroundColor: '#ededed',
           width: width * 0.45,
-          height: width * 0.1,
+          height: height * 0.05,
           borderRadius: 5,
-          marginTop: width * 0.08,
+          marginTop: height * 0.04,
           marginLeft: width * 0.02
       },
       smallButton: {
           backgroundColor: '#39404d',
           width: width * 0.29,
-          height: width * 0.06,
+          height: height * 0.03,
           borderRadius: 5,
-          marginTop: width * 0.02,
+          marginTop: height * 0.01,
           marginLeft: width * 0.03
       },
       smallCancel: {
           backgroundColor: '#eb4034',
           width: width * 0.2,
-          height: width * 0.06,
+          height: height * 0.03,
           borderRadius: 5,
-          marginTop: width * 0.02,
+          marginTop: height * 0.01,
           marginLeft: width * 0.455
       },
       smallButtonText: {
           color: "#ffffff",
-          fontSize: width * 0.04,
+          fontSize: height * 0.02,
           marginLeft: width * 0.03,
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
       },
       buttonText: {
-          fontSize: width * 0.08,
+          fontSize: height * 0.04,
           marginLeft: width * 0.03,
-          marginTop: width * 0.01
+          marginTop: height * 0.005
       },
       calendar: {
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
           position: "absolute",
           marginLeft: width * 0.001
       },
       time: {
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
       },
       timezone: {
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
           marginLeft: width * 0.756,
           width: width * 0.22,
-          height: width * 0.08,
+          height: height * 0.04,
           borderRadius: 5,
           backgroundColor: "#ededed",
           flexDirection: 'row'
@@ -893,81 +938,78 @@ const ListPage = () => {
           color: "#ffffff",
           backgroundColor: '#39404d',
           textAlign: 'center',
-          paddingBottom: width * 0.02,
-          fontSize: width * 0.06,
+          paddingBottom: height * 0.01,
+          fontSize: height * 0.03,
       },
       picture: {
           backgroundColor: '#007AFF',
           width: width * 0.45,
-          height: width * 0.1,
+          height: height * 0.05,
           borderRadius: 5,
-          marginTop: width * 0.08,
+          marginTop: height * 0.04,
           marginLeft: width * 0.02
       },
       pictureText: {
           color: "#ffffff",
-          fontSize: width * 0.08,
+          fontSize: height * 0.04,
           marginLeft: width * 0.05,
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
       },
       icon: {
-          height: width * 0.065,
-          width: width * 0.065,
-          marginTop: width * 0.01,
+          height: height * 0.0325,
+          width: height * 0.0325,
+          marginTop: height * 0.005,
           marginLeft: width * 0.015
+      },
+      menuButtons: {
+          borderBottomWidth: height * 0.00125,
+          borderBottomColor: "#cfcfcf",
+          height: height * 0.0625,
+          width: width,
+      },
+      collapsed: {
+          display: 'none',
+      },
+      icon3: {
+          width: height * 0.05,
+          height: height * 0.05,
+          marginLeft: width * 0.02,
       },
       menu: {
           position: "absolute", 
           backgroundColor: "#fff", 
           height: height, 
-          width: width * 0.7, 
-          zIndex: 1, 
+          width: height * 0.35, 
+          zIndex: 2,
           opacity: 0.98
       },
       backBlur: {
-          backgroundColor: "rgba(211, 211, 211, 0.5)", 
+          backgroundColor: "rgba(0, 0, 0, 0.5)", 
           zIndex: 1, 
           height: height, 
-          width: width * 0.3, 
-          position: "absolute", 
-          marginLeft: width * 0.7
-      },
-      menuButtons: {
-          borderBottomWidth: width * 0.002,
-          borderBottomColor: "#cfcfcf",
-          height: width * 0.124,
-          width: width,
-          flexDirection: "row",
-      },
-      collapsed: {
-            display: 'none',
-      },
-      icon3: {
-            width: width * 0.1,
-            height: width * 0.1,
-            marginLeft: width * 0.02,
+          width: width, 
+          position: "absolute",
       },
       closeIcon: {
-          width: width * 0.1,
-          height: width * 0.1,
-          marginLeft: - width * 0.18,
+          width: height * 0.05,
+          height: height * 0.05,
+          marginLeft: 0
       },
       option: {
-            width: width * 0.4,
-            height: width * 0.09,
-            marginLeft: width * 0.02,
-            marginTop: width * 0.04,
-            marginBottom: width * 0.02,
-
-            borderRadius: 5,
+          width: width * 0.4,
+          height: height * 0.045,
+          marginLeft: height * 0.01,
+          marginTop: height * 0.02,
+          marginBottom: height * 0.01,
+          borderRadius: 5,
           flexDirection: "row",
       },
       optionText: {
-            fontSize: width * 0.06,
-            marginTop: width * 0.0075,
-            marginLeft: width * 0.02,
-            textAlign: "center",
-          borderBottomWidth: 1,
+          fontSize: height * 0.03,
+          marginTop: height * 0.00375,
+          textAlign: "center",
+          borderBottomWidth: height * 0.001,
+          marginLeft: width * 0.02,
       },
 });
 

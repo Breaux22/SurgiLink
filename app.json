@@ -1,16 +1,16 @@
 {
   "expo": {
-    "scheme": "myapp",
+    "scheme": "SurgiLink",
     "platforms": [
       "ios",
       "android"
     ],
     "sdkVersion": "52.0.0",
-    "name": "set-tracker",
-    "slug": "set-tracker",
+    "name": "SurgiLink",
+    "slug": "SurgiLink",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/calendar.png",
+    "icon": "./assets/icons/surgilink-logo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",

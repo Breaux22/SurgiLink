@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useRoute } from "@react-navigation/native";
 import { useState, useEffect, useRef } from 'react';
 import { Image, StyleSheet, FlatList, SafeAreaView, View, ScrollView, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import FullCalendar from '../../components/FullCalendar/FullCalendar';
@@ -13,11 +14,13 @@ import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "
 import { useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 const MonthlyViewPage = () => {
     const route = useRoute();
+    const [masterData, setMasterData] = useState([]);
     const [monthlyCaseData, setMonthlyCaseData] = useState([]);
     const [currMonth, setCurrMonth] = useState(route.params?.month);
     const [currYear, setCurrYear] = useState(route.params?.year);
@@ -30,7 +33,11 @@ const MonthlyViewPage = () => {
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [casesStyle, setCasesStyle] = useState(styles.collapsed);
     const [menuUp, setMenuUp] = useState(false);
-    const navigation = useNavigation();
+    const navigation = useNavigation(null);
+    const [userList, setUserList] = useState(null);
+    const [userListStyle, setUserListStyle] = useState(styles.collapsed);
+    const [filterValue, setFilterValue] = useState(JSON.stringify({id: null, username: "Everyone"}));
+    const [currUser, setCurrUser] = useState(null);
 
     /*async function storeData (key, value) => {
       try {
@@ -49,12 +56,41 @@ const MonthlyViewPage = () => {
       }
     };*/
 
+    useEffect(() => {
+        (async () => {
+            try {
+                const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+                const tempObj = {id: userInfo.id, username: 'Everyone'};
+                setFilterValue(JSON.stringify(tempObj));
+                setCurrUser(userInfo);
+                const userArr = JSON.parse(userInfo.userList);
+                console.log(userArr)
+                setUserList(userArr);
+            } catch (err) {
+                console.log(err)
+            }
+
+        })();
+        return;
+    }, [])
+
+    async function displayRepName(repId) {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+        if (repId == userInfo.id) {
+            return userInfo.username;
+        } else {
+            const filterUser = userList.filter((item) => item.id == repId);
+            return filterUser[0].username;
+        }
+    }
+
     async function sessionVerify () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
           username: userInfo.username,
           sessionString: userInfo.sessionString,
           userId: userInfo.id,
+          org: userInfo.org,
         }
         const headers = {
           'method': 'POST',
@@ -63,7 +99,7 @@ const MonthlyViewPage = () => {
           },
           'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
+        const response = await fetch('https://SurgiLink.replit.app/verifySession', headers)
           .then(response => {
                 if (!response.ok){
                     console.error("Error - verifySession()")
@@ -95,7 +131,7 @@ const MonthlyViewPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/logout';
+        const url = 'https://SurgiLink.replit.app/logout';
         const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
@@ -151,6 +187,7 @@ const MonthlyViewPage = () => {
             surgYear: year,
             months: months,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -161,7 +198,7 @@ const MonthlyViewPage = () => {
             'body': JSON.stringify(data)
         }
         //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/getCases';
-        const url = 'https://surgiflow.replit.app/getCases';
+        const url = 'https://SurgiLink.replit.app/getCases';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -171,14 +208,27 @@ const MonthlyViewPage = () => {
             })
             .then(data => {return data})
         const tempArr = [...response];
+        setMasterData(tempArr);
         tempArr.sort((a,b) => new Date(a.surgdate) - new Date(b.surgdate));
-        setMonthlyCaseData(prev => tempArr);
+        if (filterValue) {
+            const myObj = JSON.parse(filterValue);
+            if (myObj.username == 'Everyone') {
+                //console.log("Is Everyone")
+                setMonthlyCaseData(tempArr);   
+            } else {
+                //console.log("Specific User")
+                let newArr = tempArr.filter((value, index) => value.rep == myObj.id);
+                setMonthlyCaseData(newArr);
+            }
+        } else {
+            setMonthlyCaseData(prev => tempArr);
+        }
     }
 
     function generateBlockList (myDate) {
         const caseList = monthlyCaseData.filter((item) => new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate() == myDate);
         return (
-            <View style={{height: height * 0.1, overflow: "hidden"}}>
+            <View style={{height: height * 0.093, overflow: "hidden"}}>
                 {caseList.map((item, index) => (
                     <View key={item.id + "A"} style={{borderRadius: 2, overflow: "hidden", height: height * 0.015, width: width * 0.128, marginLeft: width * 0.005, marginBottom: height * 0.0025, backgroundColor: item.color, }}>
                         <Text allowFontScaling={false} style={{marginLeft: width * 0.005, fontSize: height * 0.0125}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName.slice(0,10) : "Surgeon?"}</Text>
@@ -194,6 +244,16 @@ const MonthlyViewPage = () => {
             return (
                 <View style={{borderRadius: 15, width: height * 0.015, height: height * 0.015, alignSelf: "center", backgroundColor: "#a6f296"}}/>
             )
+        }
+    }
+
+    async function filterMonthlyCaseData (myId, myUsername) {
+        if (myUsername == 'Everyone') {
+            setMonthlyCaseData(masterData);
+        } else {
+            let tempArr = [...masterData];
+            let newArr = tempArr.filter((item, index) => item.userId == myId);
+            setMonthlyCaseData(newArr)   
         }
     }
 
@@ -225,11 +285,12 @@ const MonthlyViewPage = () => {
                         >
                         <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: height * 0.125, marginLeft: width * 0.05, marginTop: height * 0.01, backgroundColor: item.color, }}>
                             <View style={[styles.row, { borderBottomWidth: height * 0.0015, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getMonth() + 1}/{new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate()} {formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: height * 0.025, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
                             <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName: "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Rep: {displayRepName(item.rep)}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -257,11 +318,12 @@ const MonthlyViewPage = () => {
                         >
                         <View key={item.id} style={{ borderRadius: 5, width: width * 0.9, minHeight: height * 0.125, marginLeft: width * 0.05, marginTop: height * 0.01, backgroundColor: item.color, }}>
                             <View style={[styles.row, { borderBottomWidth: height * 0.0015, width: width * 0.88, marginLeft: width * 0.01, }]}>
-                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
+                                <Text allowFontScaling={false} style={{width: width * 0.43, fontSize: height * 0.025, }}>{new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getMonth() + 1}/{new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)).getDate()} {formatTo12HourTime(new Date(item.surgdate).getTime() + (1000*60*60*8))}</Text>
                                 <Text allowFontScaling={false} style={{textAlign: "right", fontSize: height * 0.025, width: width * 0.45}}>{item.proctype.slice(0,15)}...</Text>
                             </View>
                             <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, fontWeight: "bold", }}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
                             <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginLeft: width * 0.01, }}>@ {item.facilityName}</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Rep: {displayRepName(item.rep)}</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, }}>Notes:</Text>
                             <Text allowFontScaling={false} style={{marginLeft: width * 0.01, paddingBottom: width * 0.01, }}>{item.notes !== "" ? item.notes : "~"}</Text>
                         </View>
@@ -299,8 +361,8 @@ const MonthlyViewPage = () => {
                     </View>
                 ))}
                 {dateArr.map((item, index) => {
-                    let styleChoice = { width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
-                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, };
+                    let styleChoice = { width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, overflow: "hidden"};
+                    const styleB = { backgroundColor: "#c7f4fc", width: width * 0.1428, height: height * 0.115, borderBottomWidth: height * 0.0015, borderRightWidth: height * 0.0015, overflow: "hidden", };
                     const today = new Date();
                     if (today.getFullYear() == currYear && today.getMonth() == currMonth && today.getDate() == item+1){styleChoice = styleB}
                     return (
@@ -327,6 +389,11 @@ const MonthlyViewPage = () => {
             </View>
         )
     }
+
+    async function getUser () {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+        return userInfo;
+    } 
 
     function generateCalendarCompShort () {
         const prevLastDate = new Date(currYear, currMonth, 0).getDate();
@@ -396,6 +463,7 @@ const MonthlyViewPage = () => {
         
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
+            <Image source={require('../../assets/icons/surgilink-logo.png')} resizeMode="contain" style={{position: "absolute", marginTop: useSafeAreaInsets().top, alignSelf: "center", height: height * 0.05,}}/>
             <View style={styles.row}>
                 <View style={styles.menuButtons}>
                     <TouchableOpacity 
@@ -496,43 +564,72 @@ const MonthlyViewPage = () => {
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
-                <View style={backBlur}></View>
+                <TouchableOpacity style={backBlur} onPress={() => closeMenu()}/>
             </View>
             <View style={{height: height * 0.06, flexDirection: "row"}}>
                 <TouchableOpacity
                     onPress={() => getCases(currYear, [currMonth + 1])}
                     >
-                    <Image source={require('../../assets/icons/refresh.png')} style={{width: height * 0.045, height: height * 0.045, marginLeft: width * 0.02, marginTop: height * 0.01,}}/>
+                    <Image source={require('../../assets/icons/refresh.png')} style={{width: height * 0.045, height: height * 0.04, marginLeft: width * 0.02, marginTop: height * 0.01,}}/>
                 </TouchableOpacity>
                 <View style={{  position: "absolute", right: width * 0.01, top: height * 0.01, flexDirection: "row" }}>
-                    <TouchableOpacity
+                    {/*<TouchableOpacity
                         onPress={() => {
                             setCurrMonth(prev => new Date().getMonth());
                             setCurrYear(prev => new Date().getFullYear());
                         }}
                         >
                         <Image source={require('../../assets/icons/time.png')} style={{width: height * 0.045, height: height * 0.045,}}/>
+                    </TouchableOpacity>*/}
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (JSON.stringify(userListStyle) == JSON.stringify(styles.collapsed)) {
+                                setUserListStyle({width: width, height: height * 0.25,});
+                            } else {
+                                setUserListStyle(styles.collapsed);
+                            }
+                        }}
+                        style={{height: height * 0.04, maxWidth: width * 0.36, borderRadius: 5, marginRight: height * 0.01, backgroundColor: "#d6d6d7", paddingLeft: height * 0.01, paddingRight: height * 0.01 }}
+                        >
+                        <Text allowFontScaling={false} numberOfLines={1} ellipsizeMode="tail" style={{ textAlign: "center", marginTop: height * 0.009, }}>Calendar: {filterValue && JSON.parse(filterValue).username}</Text>
                     </TouchableOpacity>
-                    <View style={{paddingLeft: height * 0.02, paddingRight: height * 0.02,backgroundColor: "#333436", borderRadius: 30, flexDirection: "row", alignSelf: "center", }}>
-                        <TouchableOpacity
-                            style={{alignSelf: "center",}}
-                            onPress={() => prevMonth()}
-                            >
-                            <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{"<"}</Text>
-                        </TouchableOpacity>
-                        <View style={[styles.row, {alignSelf: "center"}]}>
-                            <Text style={{color: "#4fd697", fontWeight: "bold", fontSize: height * 0.035, }}>{getMonthString(currMonth)}</Text>
-                            <Text style={{color: "#fff", fontSize: height * 0.035, }}>{currYear}</Text>
+                    
+                    <View style={{backgroundColor: "#333436", borderRadius: 30, width: height * 0.23}}>                    
+                        <View style={{alignSelf: "center", flexDirection: "row"}}>
+                            <TouchableOpacity
+                                //style={{alignSelf: "center",}}
+                                onPress={() => prevMonth()}
+                                >
+                                <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{"<"}</Text>
+                            </TouchableOpacity>
+                            <View style={[styles.row, {alignSelf: "center", }]}>
+                                <Text style={{textAlign: "center", color: "#4fd697", fontWeight: "bold", fontSize: height * 0.035, }}>{getMonthString(currMonth)}</Text>
+                                <Text style={{color: "#fff", textAlign: "center", fontSize: height * 0.035, }}>{currYear}</Text>
+                            </View>
+                            <TouchableOpacity
+                                //style={{alignSelf: "center",}}
+                                onPress={() => nextMonth()}>
+                                <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{">"}</Text>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={{alignSelf: "center",}}
-                            onPress={() => nextMonth()}>
-                            <Text style={{color: "#fff", fontSize: height * 0.035, marginTop: - width * 0.005, }}>{">"}</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
-
             </View>
+            <Picker
+                selectedValue={filterValue && filterValue}
+                onValueChange={(itemValue) => {
+                    setFilterValue(itemValue);
+                    setUserListStyle(styles.collapsed);
+                    filterMonthlyCaseData(JSON.parse(itemValue).id, JSON.parse(itemValue).username);
+                }}
+                style={userListStyle}
+            >        
+                <Picker.Item label={'Everyone'} value={currUser && JSON.stringify({id: currUser.org, username: 'Everyone'})} />
+                <Picker.Item label={currUser && currUser.username} value={currUser && JSON.stringify(currUser)} />
+                {userList && userList.map((item, index) => (
+                    <Picker.Item key={item.username + "A" + index} label={item.username} value={JSON.stringify(item)} />
+                ))}
+            </Picker>
             <View style={styles.row}>
                 <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.053}}>Su</Text>
                 <Text allowFontScaling={false} style={{fontSize: height * 0.015, marginLeft: width * 0.105}}>Mo</Text>
@@ -563,7 +660,7 @@ const MonthlyViewPage = () => {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView style={{width: width, height: height * 0.45}}>
+                <ScrollView style={{width: width, height: height * 0.45, marginTop: height * 0.015,}}>
                     {casesComp}
                     <View style={{height: height * 0.2}}/>
                 </ScrollView>
@@ -586,6 +683,27 @@ const MonthlyViewPage = () => {
   };
 
 const styles = StyleSheet.create({
+    light: {
+        marginBottom: height * 0.01, 
+        height: height * 0.04, 
+        width: height * 0.23, 
+        backgroundColor: "#ededed", 
+        borderRadius: 5, 
+        borderWidth: height * 0.00125, 
+        textAlign: "center", 
+        marginTop: height * 0.01,
+    },
+    dark: {
+        marginBottom: height * 0.01, 
+        height: height * 0.04, 
+        width: height * 0.23, 
+        backgroundColor: "#333436", 
+        borderRadius: 5, 
+        borderWidth: height * 0.00125, 
+        textAlign: "center", 
+        marginTop: height * 0.01,
+        color: "#fff",
+    },
     showCasesUp: {
         position: 'absolute', 
         width: width, 

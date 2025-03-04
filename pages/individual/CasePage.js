@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Image, Button, ScrollView, SafeAreaView, View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { Image, Button, ScrollView, SafeAreaView, View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Alert, Animated } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
@@ -12,11 +12,14 @@ import { utcToZonedTime, format } from 'date-fns-tz';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 function CasePage () {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
     const route = useRoute();
+    const styles = myStyles(useSafeAreaInsets());
     const navigation = useNavigation();
     const myCase = route.params?.caseProp;
     const backTo = route.params?.backTo;
@@ -48,20 +51,38 @@ function CasePage () {
     const [loading, setLoading] = useState(styles.collapsed);
     const [previewStyle, setPreviewStyle] = useState(styles.collapsed);
     const [previewImage, setPreviewImage] = useState(null); // image data of clicked image from gallery
-    const [elapsedTime, setElapsedTime] = useState(0);
-    const intervalRef = useRef(null); // To store the interval ID
-    const pressStartTime = useRef(null);
+    const [previewIndex, setPreviewIndex] = useState(0);
+    const [prevImgStyle, setPrevImgStyle] = useState({width: 0});
     const [loadBar, setLoadBar] = useState(0);
     const [menuStyle, setMenuStyle] = useState(styles.collapsed);
     const [openStyle, setOpenStyle] = useState(styles.icon3);
     const [closeStyle, setCloseStyle] = useState(styles.collapsed);
     const [backBlur, setBackBlur] = useState(styles.collapsed);
     const [backStyle, setBackStyle] = useState(styles.back);
-    const loadBarRef = useRef(loadBar);
-    const collapseTimeout = useRef(null);
     const scrollViewRef = useRef(null);
+    const collapseTimeout = useRef(null);
     const [deleteStyle, setDeleteStyle] = useState(styles.collapsed);
     const firstLoad = useRef(true);
+    const [userList, setUserList] = useState(null);
+    const [currUser, setCurrUser] = useState(null);
+    const [userSelected, setUserSelected] = useState(null);
+    const [usersStyle, setUsersStyle] = useState(styles.collapsed);
+
+    useEffect(() => {
+        (async () => {
+            const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+            const userArr = JSON.parse(userInfo.userList);
+            if (myCase.rep == userInfo.id) {
+                setUserSelected(JSON.stringify(userInfo));
+            } else {
+                const filterUser = userArr.filter((item) => item.id == myCase.rep)
+                setUserSelected(JSON.stringify(filterUser[0]));
+            }
+            setUserList(userArr);
+            setCurrUser(userInfo);
+        })();
+        return;
+    }, [])
 
     const scrollToTop = () => {
         if (scrollViewRef.current) {
@@ -105,6 +126,7 @@ function CasePage () {
         const data = {
             publicId: previewImage.public_id,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -114,7 +136,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/destroyImage', headers)
+        const response = await fetch('https://SurgiLink.replit.app/destroyImage', headers)
             .then(response => {
                 if (!response.ok) {
                     console.error('Error - deleteImageFromCloudinary()')
@@ -125,42 +147,11 @@ function CasePage () {
         return response;
     };
 
-    const handlePressIn = () => {
-        pressStartTime.current = Date.now();
-        intervalRef.current = setInterval(() => {
-            setLoadBar((prevLoadBar) => prevLoadBar + 0.019);
-            const currentTime = Date.now();
-            const timeElapsed = currentTime - pressStartTime.current;
-            setElapsedTime(timeElapsed);
-            if (loadBarRef.current >= 0.475) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-                // then delete image
-                deleteImageFromCloudinary();
-                setImages((prevArr) => prevArr.filter((img) => img.public_id != previewImage.public_id));
-                closePreview();
-            }
-        }, 100);
-    };
-
-    const handlePressOut = () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-        setElapsedTime(0);
-        pressStartTime.current = null;
-        setLoadBar(0);
-    };
-
-    useEffect(() => {
-        loadBarRef.current = loadBar;
-    }, [loadBar]);
-
     async function getCloudCreds () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -170,7 +161,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getCloudinaryCreds';
+        const url = 'https://SurgiLink.replit.app/getCloudinaryCreds';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok) {
@@ -183,8 +174,8 @@ function CasePage () {
     }
     
     async function fetchImages() {
-        setLoading(styles.icon2);
         try {
+          setLoading(styles.icon2);
           const cloudCreds = await getCloudCreds();
           const url = `https://api.cloudinary.com/v1_1/${cloudCreds.cloud_name}/resources/image/upload?prefix=${caseId}&max_results=50`;
           // Basic Authentication (you need API key and API secret)
@@ -200,7 +191,6 @@ function CasePage () {
             throw new Error('Failed to fetch images');
           }
           const data = await response.json();
-        console.log("My images: ", data)
           const filteredImages = data.resources.filter((image) => {
             const myIndex = image.public_id.indexOf("_");
             if (image.public_id.slice(0, myIndex) === String(caseId)) {
@@ -225,6 +215,7 @@ function CasePage () {
             }
         } else if (data.myAction == 'chooseTray') {
             // change tray selected
+            console.log("data: ", data.newSet)
             const tempArr = [...trayList];
             data.newSet.checkedIn = false;
             data.newSet.open = true;
@@ -255,6 +246,7 @@ function CasePage () {
             trayId: tray.trayId,
             newName: tray.trayName,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -264,7 +256,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/updateTrayName';
+        const url = 'https://SurgiLink.replit.app/updateTrayName';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok) {console.error("Error - updateLoanerName()")}
@@ -278,6 +270,7 @@ function CasePage () {
             trayId: tray.id,
             location: tray.location,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -287,7 +280,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/updateTrayLocation';
+        const url = 'https://SurgiLink.replit.app/updateTrayLocation';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok) {
@@ -303,6 +296,7 @@ function CasePage () {
             trayId: tray.id,
             caseId: caseId,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -312,7 +306,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/removeTrayFromCase';
+        const url = 'https://SurgiLink.replit.app/removeTrayFromCase';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok) {
@@ -331,6 +325,7 @@ function CasePage () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -340,7 +335,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data),
         }
-        const url = 'https://surgiflow.replit.app/getSurgeons';
+        const url = 'https://SurgiLink.replit.app/getSurgeons';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok) {
@@ -356,6 +351,7 @@ function CasePage () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -365,7 +361,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data),
         }
-        const url = 'https://surgiflow.replit.app/getFacilities';
+        const url = 'https://SurgiLink.replit.app/getFacilities';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -381,6 +377,7 @@ function CasePage () {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -390,7 +387,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data),
         }
-        const url = 'https://surgiflow.replit.app/getTrays';
+        const url = 'https://SurgiLink.replit.app/getTrays';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -407,6 +404,7 @@ function CasePage () {
         const data = {
             caseId: caseId,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -416,7 +414,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data),
         }
-        const url = 'https://surgiflow.replit.app/getCaseTrayUses';
+        const url = 'https://SurgiLink.replit.app/getCaseTrayUses';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -433,6 +431,7 @@ function CasePage () {
         const data = {
             surgeonName: surgeonText,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -442,7 +441,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/addSurgeon', headers)
+        const response = await fetch('https://SurgiLink.replit.app/addSurgeon', headers)
             .then(response => {
                 if (!response.ok){
                     console.error("Error - addSurgeonToDB()")
@@ -461,6 +460,7 @@ function CasePage () {
         const data = {
             facilityName: facilityText,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -470,7 +470,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/addFacility', headers)
+        const response = await fetch('https://SurgiLink.replit.app/addFacility', headers)
             .then(response => {
                 if (!response.ok){
                     console.error("Error - addFacilityToDB()")
@@ -488,6 +488,7 @@ function CasePage () {
           const data = {
               trayName: loanerName,
               userId: userInfo.id,
+              org: userInfo.org,
               sessionString: userInfo.sessionString,
           }
           const headers = {
@@ -497,7 +498,7 @@ function CasePage () {
               },
               'body': JSON.stringify(data)
           }
-          const response = await fetch('https://surgiflow.replit.app/addTray', headers)
+          const response = await fetch('https://SurgiLink.replit.app/addTray', headers)
               .then(response => {
                   if (!response.ok) {
                       console.error('Error - addLoanerToDB()')
@@ -511,6 +512,7 @@ function CasePage () {
         const data = {
             caseId: caseId,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -520,7 +522,7 @@ function CasePage () {
             },
             'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/deleteCase', headers)
+        const response = await fetch('https://SurgiLink.replit.app/deleteCase', headers)
             .then(response => {
                 if (!response.ok) {
                     console.error('Error - deleteCase()')
@@ -589,12 +591,15 @@ function CasePage () {
             surgTime: new Date(surgdate - (1000*60*60*8)),
             procType: proctype,
             dr: tempArr[0],
+            rep: JSON.parse(userSelected).id,
             hosp: tempArr2[0],
             notes: notes,
             trayList: JSON.stringify(trayList),
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
+        console.log("CD: ", caseData)
         const headers = {
             'method': 'POST',
             'headers': {
@@ -602,12 +607,13 @@ function CasePage () {
             },
             'body': JSON.stringify(caseData)
         }
-        const response = await fetch('https://surgiflow.replit.app/updateCase', headers)
+        const response = await fetch('https://SurgiLink.replit.app/updateCase', headers)
         //const response = await fetch('https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/updateCase', headers)
             .then(response => {
                 if (!response.ok) {
                     console.error('Error - updateCase()')
                 } else if (response.ok) {
+                    console.log("BT: ", backTo)
                     navigation.reset({
                       index: 0,
                       routes: [{ name: backTo.name, params: backTo.params }],
@@ -630,8 +636,9 @@ function CasePage () {
         setNotes(myCase.notes);
     }
 
-    async function openPreview (imageData) {
+    async function openPreview (imageData, myIndex) {
         setPreviewImage(imageData);
+        setPreviewIndex(myIndex);
         setPreviewStyle(styles.preview);
         setBackStyle(styles.collapsed);
         scrollToTop();
@@ -645,10 +652,10 @@ function CasePage () {
 
     function mapPictures () {
         if (images.length > 0) {
-            return images.map((myImage) => (
+            return images.map((myImage, myIndex) => (
                 <TouchableOpacity 
                     key={myImage.secure_url}
-                    onPress={() => openPreview(myImage)}
+                    onPress={() => openPreview(myImage, myIndex)}
                 >
                         <Image
                           source={{ uri: myImage.url }}
@@ -667,10 +674,30 @@ function CasePage () {
         setSurgdate(newDate);
     }
 
+    const updateImgStyle = () => {
+        myFade()
+        if (width > height) {
+          setPrevImgStyle({ alignSelf: "center", width: (height * 0.91) * (previewImage.width / previewImage.height) , height: (height * 0.91), })
+        } else {
+          setPrevImgStyle({ alignSelf: "center", width: width, height: width * (previewImage.height / previewImage.width), })
+        }
+        return;
+    }
+
+      async function myFade ()  {
+          fadeAnim.setValue(0);
+          Animated.sequence([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }),
+          ]).start();
+      };
+
     useEffect(() => {
         if (firstLoad.current) {
             firstLoad.current = false;
-            console.log("First Load Only?")
             updateValues();
             getSurgeons();
             getFacilities();
@@ -682,42 +709,43 @@ function CasePage () {
 
     return (
         <SafeAreaView style={{backgroundColor: "#fff"}}>
+            <Image source={require('../../assets/icons/surgilink-logo.png')} resizeMode="contain" style={{position: "absolute", marginTop: useSafeAreaInsets().top, alignSelf: "center", height: height * 0.05,}}/>
             <View style={deleteStyle}>
-                <View style={{position: "absolute", width: width * 0.8, height: width * 0.35, marginLeft: width * 0.1, marginTop: width * 0.35, backgroundColor: "#fff", borderRadius: 5, borderWidth: width * 0.005,}}>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.07, textAlign: "justify", padding: width * 0.02,}}>Are you sure you want to delete this case?</Text>
+                <View style={{position: "absolute", width: width * 0.8, height: height * 0.175, marginLeft: width * 0.1, marginTop: height * 0.175, backgroundColor: "#fff", borderRadius: 5, borderWidth: height * 0.0025,}}>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.035, textAlign: "justify", padding: width * 0.02,}}>Are you sure you want to delete this case?</Text>
                     <View style={styles.row}>
                         <TouchableOpacity
                             onPress={() => setDeleteStyle(styles.collapsed)}
                             >
-                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: width * 0.1, width: width * 0.25, textAlign: "center", backgroundColor: "#d6d6d7", borderRadius: 5, fontSize: width * 0.06, paddingTop: width * 0.01}}>Cancel</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: height * 0.05, width: width * 0.25, textAlign: "center", backgroundColor: "#d6d6d7", borderRadius: 5, fontSize: height * 0.03, paddingTop: height * 0.005}}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => deleteCase()}
                             >
-                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: width * 0.1, width: width * 0.25, textAlign: "center", backgroundColor: "#d16f6f", borderRadius: 5, fontSize: width * 0.06, paddingTop: width * 0.01}}>Delete</Text>
+                            <Text allowFontScaling={false} style={{marginLeft: width * 0.1, height: height * 0.05, width: width * 0.25, textAlign: "center", backgroundColor: "#d16f6f", borderRadius: 5, fontSize: height * 0.03, paddingTop: height * 0.005}}>Delete</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
-            <View style={{flexDirection: "row", borderBottomWidth: width * 0.002, borderBottomColor: "#cfcfcf", height: width * 0.124}}>
+            <View style={{flexDirection: "row", borderBottomWidth: width * 0.002, borderBottomColor: "#cfcfcf", height: height * 0.0625}}>
                 <TouchableOpacity
-                    style={{marginTop: width * 0.023, marginBottom: width * 0.03, marginLeft: width * 0.02, }}
+                    style={{marginTop: height * 0.0115, marginBottom: height * 0.015, marginLeft: width * 0.02, }}
                     onPress={async () => {
                         // save case then go back
                         setDeleteStyle(styles.deleteStyle);
                     }}
                     >
                     {/*<Image source={require('../../assets/icons/left-arrow-thin.png')} style={styles.icon}/>*/}
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, color: "#de0d29"}}>Delete Case</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.025, color: "#de0d29"}}>Delete Case</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={{marginTop: width * 0.023, marginBottom: width * 0.03, marginLeft: width * 0.57,}}
+                    style={{marginTop: height * 0.0115, marginBottom: height * 0.015, position: "absolute", right: height * 0.02, }}
                     onPress={async () => {
                         // save case then go back
                         updateCase();
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05}}>Done</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.025}}>Done</Text>
                 </TouchableOpacity>
             </View>
             <ScrollView ref={scrollViewRef} style={styles.container}>
@@ -730,34 +758,10 @@ function CasePage () {
                         onChange={setDate}
                         minuteInterval={5}
                     />
-                    <TouchableOpacity style={styles.timezone} onPress={() => {
-                        if (tzPickerStyle == styles.collapsed) {
-                            setTzPickerStyle(styles.container);
-                        } else {
-                            setTzPickerStyle(styles.collapsed);
-                        }
-                    }}>
-                        <Text allowFontScaling={false} style={styles.body}>{timeZone}</Text>
-                    </TouchableOpacity>
                 </View>
-                <Picker
-                    selectedValue={timeZone}
-                    onValueChange={(itemValue/*, itemIndex*/) => {
-                        setTimeZone(itemValue);
-                    }}
-                    style={tzPickerStyle}
-                >
-                    <Picker.Item label="HST (GMT-10)" value="HST (GMT-10)" />
-                    <Picker.Item label="AST (GMT-9)" value="AST (GMT-9)" />
-                    <Picker.Item label="PST (GMT-8)" value="PST (GMT-8)" />
-                    <Picker.Item label="MST (GMT-7)" value="MST (GMT-7)" />
-                    <Picker.Item label="CST (GMT-6)" value="CST (GMT-6)" />
-                    <Picker.Item label="EST (GMT-5)" value="EST (GMT-5)" />
-
-                </Picker>
                 <Text allowFontScaling={false} style={styles.title}>Surgeon Name:</Text>
                 <TouchableOpacity style={styles.textBox} onPress={() => {
-                    if (surgeonStyle == styles.collapsed) {
+                    if (JSON.stringify(surgeonStyle) == JSON.stringify(styles.collapsed)) {
                         if (collapseTimeout.current) {
                             clearTimeout(collapseTimeout.current);
                         }
@@ -785,22 +789,22 @@ function CasePage () {
                         />
                     </View>
                     <View style={styles.row}>
-                        <TouchableOpacity onPress={() => {
+                        <TouchableOpacity 
+                            style={styles.smallCancel}
+                            onPress={() => {
                             setMstStyle(styles.collapsed);
                             setSurgeonText("Choose Surgeon...");
                         }}>
-                            <View style={styles.smallCancel}>
-                                <Text allowFontScaling={false} style={styles.smallButtonText}>Cancel</Text>
-                            </View>
+                            <Text allowFontScaling={false} style={styles.smallButtonText}>Cancel</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => {
+                        <TouchableOpacity 
+                            style={styles.smallButton}
+                            onPress={() => {
                             setMstStyle(styles.collapsed);
                             setSurgeonStyle(styles.collapsed);
                             addSurgeonToDB();
                         }}>
-                            <View style={styles.smallButton}>
-                                <Text allowFontScaling={false} style={styles.smallButtonText}>Accept Name</Text>
-                            </View>
+                            <Text allowFontScaling={false} style={styles.smallButtonText}>Accept Name</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -844,9 +848,34 @@ function CasePage () {
                       setSDHeight(event.nativeEvent.contentSize.height);
                     }}
                 />
+                <Text allowFontScaling={false} style={styles.title}>Rep:</Text>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (JSON.stringify(usersStyle) == JSON.stringify(styles.collapsed)) {
+                            setUsersStyle({width: width, height: height * 0.2});
+                        } else {
+                            setUsersStyle(styles.collapsed);
+                        }
+                    }}
+                    style={styles.textBox}
+                    >
+                    <Text allowFontScaling={false} style={styles.textInput}>{userSelected && JSON.parse(userSelected).username}</Text>
+                </TouchableOpacity>
+                <Picker
+                    selectedValue={userSelected}
+                    onValueChange={(itemValue/*, itemIndex*/) => {
+                        setUserSelected(itemValue);
+                    }}
+                    style={usersStyle}
+                >        
+                    <Picker.Item label={currUser && currUser.username} value={currUser && JSON.stringify(currUser)}/>
+                    {userList && userList.map((item, index) => (
+                        <Picker.Item key={item.username + "A"} label={item.username} value={JSON.stringify(item)} />
+                    ))}
+                </Picker>
                 <Text allowFontScaling={false} style={styles.title}>Facility Name:</Text>
                 <TouchableOpacity style={styles.textBox} onPress={() => {
-                    if (facilityStyle == styles.collapsed) {
+                    if (JSON.stringify(facilityStyle) == JSON.stringify(styles.collapsed)) {
                         if (collapseTimeout.current) {
                             clearTimeout(collapseTimeout.current);
                         }
@@ -927,21 +956,21 @@ function CasePage () {
                     </View>
                     <View style={styles.row}>
                         <TouchableOpacity 
-                            style={{width: width * 0.522, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} 
+                            style={{width: height * 0.2, height: height * 0.045, marginTop: height * 0.015, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} 
                             onPress={() => {
                                 setTrayList((trayList) => [...trayList, {trayName: "Choose Tray...", location: '', loaner: false, checkedIn: false, open: true}]);
                             //setLoanerStyle(styles.collapsed);
                             }}>
-                            <View style={styles.row}>
-                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Consignment Tray</Text>
+                            <View style={[styles.row, {alignSelf: "center"}]}>
+                                <Text allowFontScaling={false} style={{fontWeight: "bold", marginTop: height * 0.012, marginRight: height * 0.01,}}>Add My Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>
-                        <TouchableOpacity style={{width: width * 0.418, height: width * 0.09, marginTop: width * 0.03, marginLeft: width * 0.02, backgroundColor: "#ededed", borderRadius: 5, }} onPress={() => {
+                        <TouchableOpacity style={{width: height * 0.23, height: height * 0.045, marginTop: height * 0.015, marginLeft: height * 0.01, backgroundColor: "#ededed", borderRadius: 5, }} onPress={() => {
                             setTrayList((trayList) => [...trayList, {id: null, trayName: "", location: '', loaner: true, checkedIn: false, open: true}]);
                         }}>
-                            <View style={[styles.row, {textAlign: "center"}]}>
-                                <Text allowFontScaling={false} style={[styles.title, {fontWeight: "bold", }]}>Add Loaner Tray</Text>
+                            <View style={[styles.row, {alignSelf: "center"}]}>
+                                <Text allowFontScaling={false} style={{fontWeight: "bold", marginTop: height * 0.012, marginRight: height * 0.01,}}>Add Loaner Tray</Text>
                                 <Image source={require('../../assets/icons/plus.png')} style={styles.icon}/>
                             </View>                    
                         </TouchableOpacity>
@@ -959,7 +988,7 @@ function CasePage () {
                     <TouchableOpacity
                         onPress={() => fetchImages()}
                         >
-                        <Image source={require('../../assets/icons/refresh.png')} style={{width: width * 0.08, height: width * 0.08,}}/>
+                        <Image source={require('../../assets/icons/refresh.png')} style={{width: height * 0.04, height: height * 0.04,}}/>
                     </TouchableOpacity>
                 </View>
                 <Image source={require('../../assets/icons/loading.gif')} style={loading}/>
@@ -972,32 +1001,59 @@ function CasePage () {
                         {mapPictures()}
                     </View>
                 </ScrollView>
-                <View style={previewStyle}>
-                    {previewImage && <Image
-                      source={{ uri: previewImage.url }}
-                      style={styles.previewImage}
-                    />}
-                    <View style={styles.row}>
-                        <TouchableOpacity style={styles.closePreview} onPress={() => closePreview()}>
-                            <Text allowFontScaling={false} style={styles.closePreviewText}>Close</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={styles.deleteButton}
-                            onPressIn={handlePressIn}
-                            onPressOut={handlePressOut}
-                        >
-                            <View style={{borderRadius: 5, width: width * loadBar, height: width * 0.11, backgroundColor: "#fff", zIndex: 1}}></View>
-                            <Text allowFontScaling={false} style={styles.deleteButtonText}>Hold to Delete</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
             </ScrollView>
+                {previewImage && 
+                <View style={previewStyle}>
+                    <TouchableOpacity
+                        style={{position: "absolute", top: height * 0.02, left: height * 0.02, zIndex: 1, opacity: 0.5,}}
+                        onPress={() => setPreviewStyle(styles.collapsed)}
+                        >
+                        <Image source={require('../../assets/icons/close-white.png')} style={{height: height * 0.05, width: height * 0.05,}}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{position: "absolute", top: height * 0.45, left: height * 0.02, zIndex: 1, opacity: 0.5,}}
+                        onPress={() => {
+                            setPreviewIndex(prev => {
+                                if (prev > 0) {
+                                    setPreviewImage(images[prev - 1]);
+                                    return prev - 1;
+                                } else {return prev}
+                            });
+                        }}
+                        >
+                        <Image source={require('../../assets/icons/left-arrow.png')} style={{height: height * 0.05, width: height * 0.05,}}/>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{position: "absolute", top: height * 0.45, right: height * 0.02, zIndex: 1, opacity: 0.5,}}
+                        onPress={() => {
+                            setPreviewIndex(prev => {
+                                if (prev < images.length - 1) {
+                                    setPreviewImage(images[prev + 1]);
+                                    return prev + 1;
+                                } else {return prev}
+                            });
+                        }}
+                        >
+                        <Image source={require('../../assets/icons/right-arrow.png')} style={{height: height * 0.05, width: height * 0.05,}}/>
+                    </TouchableOpacity>
+                    <ScrollView >
+                        <Animated.View style={{ opacity: fadeAnim }}>
+                            <Image
+                                style={prevImgStyle}
+                                source={{ uri: previewImage.url }}
+                                onLoad={() => {
+                                    updateImgStyle();
+                                }}
+                            />
+                        </Animated.View>
+                    </ScrollView>
+                </View>}
         </SafeAreaView>
     );
   };
 
 
-  const styles = StyleSheet.create({
+  const myStyles = (insets) => StyleSheet.create({
     container: {
         backgroundColor: '#FFFFFF',
     },
@@ -1005,8 +1061,8 @@ function CasePage () {
         flexDirection: 'row',
     },
     back: {
-        marginTop: width * 0.03, 
-        marginBottom: width * 0.02, 
+        marginTop: height * 0.015,
+        marginBottom: height * 0.01, 
         marginLeft: width * 0.02, 
         backgroundColor: "#fff"
     },
@@ -1015,70 +1071,69 @@ function CasePage () {
         width: width * 0.96,
         padding: width * 0.02,
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
-        borderWidth: width * 0.002,
+        marginTop: height * 0.01,
+        borderWidth: height * 0.001,
         borderRadius: 5,
     },
     controlRow: {
       flexDirection: "row",
-      marginBottom: width * 0.02,
+      marginBottom: height * 0.01,
     },
     gallery: {
         flexDirection: "row",
         flexWrap: "wrap",
-        marginTop: width * 0.02,
-        marginBottom: width * 0.1,
+        marginTop: height * 0.01,
+        marginBottom: height * 0.05,
         width: width,
         paddingTop: width * 0.02,
         paddingBottom: width * 0.02
     },
     galContainer:{
         height: width,
-        marginBottom: width * 0.1,
+        marginBottom: height * 0.05,
     },
     preview: {
         position: "absolute",
-        width: width,
-        height: height * 1.1,
-        backgroundColor: "rgba(15, 15, 15, 0.75)",
+        width: width, height: height * 2,
+        marginTop: insets.top,
+        backgroundColor: "rgba(0,0,0,0.95)",
     },
     previewImage: {
-        marginTop: width * 0.1,
-        marginLeft: width * 0.1,
-        width: width * 0.8,
-        height: width * 1.498
+        //marginTop: height * 0.025,
+        alignSelf: "center",
+        width: height * 0.427,
+        height: height * 0.8
     },
     closePreview:{
-        width: width * 0.3,  
-        height: width * 0.11,
-        borderRadius: 5,
-        marginLeft: width * 0.1,
-        marginTop: width * 0.06,
+        width: height * 0.275,  
+        height: height * 0.055,
+        //marginLeft: width * 0.1,
+        //marginTop: height * 0.03,
         backgroundColor: "#fff"
     },
     closePreviewText: {
-        fontSize: width * 0.06,
-        marginLeft: width * 0.07,
-        marginTop: width * 0.02,
+        fontSize: height * 0.03,
+        textAlign: "center",
+        marginTop: height * 0.01,
     },
     deleteButton: {
-        width: width * 0.475,
-        height: width * 0.11,
-        borderRadius: 5,
-        marginLeft: width * 0.025,
-        marginTop: width * 0.06,
+        width: height * 0.15,
+        height: height * 0.055,
+        //marginLeft: width * 0.025,
+        //marginTop: height * 0.03,
         backgroundColor: "#eb4034"
     },
     deleteLoadBar: {
         position: "absolute",
-        height: width * 0.11,
+        height: height * 0.055,
         backgroundColor: "#fff",
         zIndex: 1
     },
     deleteButtonText: {
-        fontSize: width * 0.06,
-        marginLeft: width * 0.055,
-        marginTop: -width * 0.09,
+        fontSize: height * 0.03,
+        //marginLeft: width * 0.055,
+        textAlign: "center",
+        marginTop: height * 0.01,
         color: "#fff",
     },
     deleteStyle: {
@@ -1095,18 +1150,18 @@ function CasePage () {
         height: width * 0.32,
     },
     tzPicker: {
-      fontSize: width * 0.01  
+      fontSize: height * 0.005
     },
     title: {
         color: "#292c3b",
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
+        marginTop: height * 0.01,
     },
     body: {
         color: "#292c3b",
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
-        fontSize: width * 0.03
+        marginTop: height * 0.01,
+        fontSize: height * 0.015
     },
     textInput: {
         color: "#39404d", 
@@ -1114,25 +1169,25 @@ function CasePage () {
     expandingTextInput: {
         width: width * 0.96,
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
-        padding: width * 0.02,
+        marginTop: height * 0.01,
+        padding: height * 0.01,
         borderRadius: 5,
         backgroundColor: '#ededed'
     },
     textBox: {
         width: width * 0.96,
-        height: width * 0.1,
+        height: height * 0.04,
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
-        padding: width * 0.02,
+        marginTop: height * 0.01,
+        padding: height * 0.01,
         borderRadius: 5,
         backgroundColor: '#ededed'
     },
     bigTextBox: {
         width: width * 0.96,
-        height: width * 0.2,
+        height: height * 0.1,
         marginLeft: width * 0.02,
-        marginTop: width * 0.02,
+        marginTop: height * 0.01,
         padding: width * 0.02,
         borderRadius: 5,
         backgroundColor: '#ededed'
@@ -1140,58 +1195,58 @@ function CasePage () {
     largeButton: {
         backgroundColor: '#ededed',
         width: width * 0.4,
-        height: width * 0.1,
+        height: height * 0.05,
         borderRadius: 5,
         marginLeft: width * 0.025,
-        marginTop: width * 0.02,
+        marginTop: height * 0.01,
     },
     button: {
         backgroundColor: '#ededed',
         width: width * 0.35,
-        height: width * 0.1,
+        height: height * 0.05,
         borderRadius: 5,
-        marginTop: width * 0.1,
+        marginTop: height * 0.05,
         marginLeft: width * 0.02
     },
     smallButton: {
         backgroundColor: '#39404d',
-        width: width * 0.335,
-        height: width * 0.07,
+        width: height * 0.2,
+        height: height * 0.035,
         borderRadius: 5,
-        marginTop: width * 0.02,
-        marginLeft: width * 0.03
+        marginTop: height * 0.01,
+        marginLeft: height * 0.01,
     },
     smallCancel: {
           backgroundColor: '#eb4034',
-          width: width * 0.2,
-          height: width * 0.07,
+          width: height * 0.1,
+          height: height * 0.035,
           borderRadius: 5,
-          marginTop: width * 0.02,
-          marginLeft: width * 0.42
+          marginTop: height * 0.01,
+          marginLeft: width * 0.02,
     },
     smallButtonText: {
           color: "#ffffff",
-          fontSize: width * 0.04,
+          fontSize: height * 0.02,
           textAlign: "center",
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
     },
     buttonText: {
-        fontSize: width * 0.08,
+        fontSize: height * 0.04,
         marginLeft: width * 0.05,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
     },
     calendar: {
-        marginTop: width * 0.02,
-        marginLeft: - width * 0.008
+        marginTop: height * 0.01,
+        marginLeft: height * 0.01,
     },
     time: {
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
     },
     timezone: {
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.756,
         width: width * 0.22,
-        height: width * 0.08,
+        height: height * 0.04,
         borderRadius: 5,
         backgroundColor: "#ededed",
         flexDirection: 'row'
@@ -1204,32 +1259,31 @@ function CasePage () {
         backgroundColor: '#39404d',
         textAlign: 'center',
         paddingBottom: width * 0.02,
-        fontSize: width * 0.06
+        fontSize: height * 0.03
     },
     picture: {
         backgroundColor: 'rgba(0, 122, 255, 0.8)',
-        width: width * 0.45,
-        height: width * 0.12,
+        width: height * 0.225,
+        height: height * 0.06,
         borderRadius: 5,
-        marginTop: width * 0.08,
+        marginTop: height * 0.02,
         marginLeft: width * 0.02
     },
     pictureText: {
         color: "#ffffff",
-        fontSize: width * 0.08,
-        marginLeft: width * 0.05,
-        marginTop: width * 0.01,
+        fontSize: height * 0.04,
+        textAlign: "center",
+        marginTop: height * 0.005,
     },
     icon: {
-        height: width * 0.065,
-        width: width * 0.065,
-        marginTop: width * 0.01,
-        marginLeft: width * 0.015
+        height: height * 0.0325,
+        width: height * 0.0325,
+        marginTop: height * 0.005,
     },
     icon2: {
-        height: width * 0.1,
-        width: width * 0.1,
-        marginTop: width * 0.01,
+        height: height * 0.05,
+        width: height * 0.05,
+        marginTop: height * 0.005,
         marginLeft: width * 0.45
     },
     menu: {
@@ -1248,47 +1302,15 @@ function CasePage () {
         position: "absolute", 
         marginLeft: width * 0.7
     },
-    option: {
-          backgroundColor: "rgba(0, 122, 255, 0.8)",
-          width: width * 0.4,
-          height: width * 0.09,
-          marginBottom: width * 0.02,
-          borderRadius: 5
-    },
-    optionText: {
-          color: "#fff",
-          fontSize: width * 0.06,
-          marginTop: width * 0.0075,
-          textAlign: "center"
-    },
     menuButtons: {
         borderBottomWidth: width * 0.002,
         borderBottomColor: "#cfcfcf",
-        height: width * 0.124
-    },
-    collapsed: {
-          display: 'none',
+        height: height * 0.0625
     },
     icon3: {
-          width: width * 0.1,
-          height: width * 0.1,
+          width: height * 0.05,
+          height: height * 0.05,
           marginLeft: width * 0.02,
-    },
-    option: {
-          //backgroundColor: "rgba(0, 122, 255, 0.8)",
-          width: width * 0.4,
-          height: width * 0.09,
-          marginLeft: width * 0.02,
-          marginTop: width * 0.04,
-          marginBottom: width * 0.02,
-          borderBottomWidth: 1,
-          borderRadius: 5
-    },
-    optionText: {
-          //color: "#fff",
-          fontSize: width * 0.06,
-          marginTop: width * 0.0075,
-          textAlign: "center"
     },
 });
 

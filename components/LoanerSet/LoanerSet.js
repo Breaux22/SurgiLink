@@ -5,7 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useMemory } from '../../MemoryContext';
 import _ from 'lodash';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 function Index({ sendDataToParent, props, index, myTrays, statuses }) {
   const [location, setLocation] = useState(props.location);
@@ -103,9 +103,9 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
     <View style={styles.container2}>
       <View style={styles.row}>
         <Text  allowFontScaling={false}  style={styles.title}>Tray #{index+1}</Text>
-        <Text allowFontscaling={false} style={{backgroundColor: "#f08a0e", fontWeight: "bold", borderWidth: width * 0.003, borderRadius: 5, fontSize: width * 0.04, height: width * 0.055, marginTop: width * 0.01, marginLeft: width * 0.01, textAlign: "center", width: width * 0.2,  }}>LOANER</Text>
+        <Text allowFontscaling={false} style={{backgroundColor: "#f08a0e", fontWeight: "bold", borderWidth: height * 0.0015, borderRadius: 5, fontSize: height * 0.02, height: height * 0.0275, marginTop: height * 0.005, marginLeft: width * 0.01, textAlign: "center", width: height * 0.15,  }}>LOANER</Text>
         <TouchableOpacity 
-          style={{marginTop: width * 0.015, marginLeft: width * 0.435, }}
+          style={{marginTop: height * 0.0075, position: "absolute", right: width * 0.03,  }}
           onPress={() => {
             sendDataToParent({myAction: 'remove', tray: props}, index);
           }}
@@ -118,20 +118,22 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           allowFontScaling={false}
           value={trayName}
           onChangeText={(input) => setTrayName(input)}
-          style={{width: width * 0.91, height: width * 0.09, backgroundColor: "#ededed", borderRadius: 5, marginLeft: width * 0.02, marginTop: width * 0.02, padding: width * 0.02, }}
+          style={{width: width * 0.91, height: height * 0.04, backgroundColor: "#ededed", borderRadius: 5, marginLeft: width * 0.02, marginTop: height * 0.01, padding: height * 0.01, }}
           />
-      <View style={styles.row}>
-        <Image source={require('../../assets/icons/enter.png')} style={{width: width * 0.09, height: width * 0.09, marginLeft: width * 0.04,}}/>
-        <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginTop: width * 0.02, backgroundColor: "#ededed", borderTopLeftRadius: 5, borderBottomLeftRadius: 5, marginLeft: width * 0.02, paddingLeft: width * 0.02, paddingTop: width * 0.005}}>@</Text>
-        <TextInput
-          allowFontScaling={false}
-          value={location}
-          onChangeText={(input) => setLocation(input)}
-          style={styles.textInput}
-          placeholder={"Tray Location (i.e. Storage Unit)"}
-          />
+      <View style={[styles.row, {marginBottom: height * 0.005}]}>
+        <Image source={require('../../assets/icons/enter.png')} style={{width: height * 0.04, height: height * 0.04, marginLeft: width * 0.04,}}/>
+        <View style={[styles.row, {position: "absolute", right: width * 0.029, marginTop: height * 0.0075}]}>
+          <Text allowFontScaling={false} style={{fontSize: height * 0.03, height: height * 0.04, /*marginTop: height * 0.005,*/ backgroundColor: "#ededed", borderTopLeftRadius: 5, borderBottomLeftRadius: 5, marginLeft: width * 0.02, paddingLeft: width * 0.02, paddingTop: height * 0.001}}>@</Text>
+          <TextInput
+            allowFontScaling={false}
+            value={location}
+            onChangeText={(input) => setLocation(input)}
+            style={styles.textInput}
+            placeholder={"Tray Location (i.e. Storage Unit)"}
+            />
+        </View>
       </View>
-      <View style={[styles.row, {marginTop: width * 0.02}]}>
+      <View style={[styles.row, {marginTop: height * 0.01}]}>
         <TouchableOpacity 
           style={getColorA()}
           onPress={() => {
@@ -148,10 +150,10 @@ function Index({ sendDataToParent, props, index, myTrays, statuses }) {
           >
           <Text allowFontScaling={false} style={styles.statusText}>Hold</Text>
         </TouchableOpacity>
-        <View style={styles.row}>
-          <Text allowFontScaling={false} style={{fontSize: width * 0.04, marginLeft: width * 0.02, marginTop: width * 0.02, }}>Checked In</Text>
+        <View style={[styles.row, {position: "absolute", right: width * 0.03,}]}>
+          <Text allowFontScaling={false} style={{fontSize: height * 0.018, marginLeft: width * 0.02, marginTop: height * 0.01, }}>Checked In</Text>
           <TouchableOpacity 
-            style={{borderRadius: 5, borderWidth: width * 0.005, marginLeft: width * 0.02, }}
+            style={{borderRadius: 5, borderWidth: height * 0.0025, marginLeft: width * 0.02, }}
             onPress={() => {
               setCheckedIn(prev => !prev);
             }}
@@ -171,34 +173,35 @@ const styles = StyleSheet.create({
   container2: {
     backgroundColor: "#ffffff",
     borderRadius: 5,
-    borderWidth: width * 0.002,
+    borderWidth: height * 0.001,
     marginLeft: width * 0.02,
-    marginTop: width * 0.02,
+    marginTop: height * 0.01,
     paddingBottom: width * 0.02,
     width: width * 0.96,
   },
   title: {
     color: "#292c3b",
     marginLeft: width * 0.02,
-    marginTop: width * 0.015,
+    marginTop: height * 0.0075,
     fontWeight: "bold",
   },
   textInput: {
     backgroundColor: "#ededed",
     color: "#39404d",
-    width: width * 0.705,
-    height: width * 0.09,
-    marginTop: width * 0.02,
+    width: width * 0.69,
+    height: height * 0.04,
+    //marginTop: height * 0.005,
+    //marginBottom: height * 0.005,
     paddingLeft: width * 0.02,
     borderTopRightRadius: 5,
     borderBottomRightRadius: 5
   },    
   textBox: {
       width: width * 0.91,
-      height: width * 0.09,
+      height: height * 0.045,
       marginLeft: width * 0.02,
-      marginTop: width * 0.02,
-      padding: width * 0.02,
+      marginTop: height * 0.01,
+      padding: height * 0.01,
       borderRadius: 5,
       backgroundColor: '#ededed'
   },
@@ -207,57 +210,57 @@ const styles = StyleSheet.create({
   },
   green: {
     width: width * 0.28, 
-    height: width * 0.09, 
+    height: height * 0.045, 
     backgroundColor: "#ededed", 
     marginLeft: width * 0.02, 
     borderRadius: 5,
-    borderWidth: width * 0.002,
-    paddingTop: width * 0.01,
+    borderWidth: height * 0.001,
+    paddingTop: width * 0.005,
     opacity: 0.4,
   },
   greenB: {
     width: width * 0.28, 
-    height: width * 0.09, 
+    height: height * 0.045, 
     backgroundColor: "#32a852", 
     marginLeft: width * 0.02, 
     borderRadius: 5, 
-    borderWidth: width * 0.01,
+    borderWidth: height * 0.005,
   },
   blue: {
-    width: width * 0.08, 
-    height: width * 0.08, 
+    width: height * 0.04,
+    height: height * 0.04,
     opacity: 0,
   },
   blueB: {
-    width: width * 0.08, 
-    height: width * 0.08, 
+    width: height * 0.04,
+    height: height * 0.04,
     backgroundColor: "rgba(0, 122, 255, 0.8)", 
     borderRadius: 4,
-    fontSize: width * 0.06,
+    fontSize: height * 0.03,
     fontWeight: "bold",
-    paddingLeft: width * 0.02,
-    paddingTop: width * 0.004,
+    textAlign: "center",
+    paddingTop: width * 0.002,
   },
   red: {
     width: width * 0.28, 
-    height: width * 0.09, 
+    height: height * 0.045, 
     backgroundColor: "#ededed", 
     marginLeft: width * 0.02, 
     borderRadius: 5,
-    borderWidth: width * 0.002,
-    paddingTop: width * 0.01,
+    borderWidth: height * 0.001,
+    paddingTop: width * 0.005,
     opacity: 0.4,
   },
   redB: {
     width: width * 0.28, 
-    height: width * 0.09, 
+    height: height * 0.045, 
     backgroundColor: "#d16f6f", 
     marginLeft: width * 0.02, 
     borderRadius: 5, 
-    borderWidth: width * 0.01,
+    borderWidth: height * 0.005,
   },
   statusText: {
-    fontSize: width * 0.06,
+    fontSize: height * 0.03,
     textAlign: "center",
   },
 });

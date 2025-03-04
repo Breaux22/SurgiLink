@@ -13,6 +13,7 @@ import Animated, { useSharedValue, withTiming, Easing, useAnimatedStyle } from "
 import { useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ function LoginPage () {
   const [sentStyle, setSentStyle] = useState(styles.collapsed);
 
  async function saveData (userInfo) {
+   console.log("login: ", userInfo)
     await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo), {
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY, // iOS security setting
     });
@@ -44,7 +46,7 @@ function LoginPage () {
       },
       'body': JSON.stringify(data)
     }
-    const response = await fetch('https://surgiflow.replit.app/recoveryEmail', headers)
+    const response = await fetch('https://SurgiLink.replit.app/recoveryEmail', headers)
       .then(response => {
         if (!response.ok) {
           console.error('Error - sendRecoveryEmail()')
@@ -78,8 +80,8 @@ function LoginPage () {
       },
       'body': JSON.stringify(data)
     }
-    //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/login'
-    const url = 'https://surgiflow.replit.app/login'
+    const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/login'
+    //const url = 'https://SurgiLink.replit.app/login'
     const response = await fetch(url, headers)
       .then(response => {
         if (!response.ok) {
@@ -101,7 +103,7 @@ function LoginPage () {
           cases: [],
         }
         await AsyncStorage.setItem(username, JSON.stringify(myData));*/
-      console.log(response.userInfo)
+        console.log("Login2: ", response.userInfo)
         await saveData(response.userInfo);
         navigation.reset({
           index: 0,
@@ -112,7 +114,7 @@ function LoginPage () {
   }
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{backgroundColor: "#fff", height: height,}}>
         <View style={mainView}>
           <TouchableOpacity
             style={styles.login}
@@ -125,12 +127,13 @@ function LoginPage () {
             >
             <Text allowFontScaling={false} style={styles.signUp}>Sign Up!</Text>
           </TouchableOpacity>
-          <Image source={require('../assets/icons/calendar.png')} style={styles.bigIcon}/>
+          <Image source={require('../assets/icons/surgilink-logo.png')} resizeMode="contain" style={styles.bigIcon}/>
           <View style={styles.row}>
             <Text allowFontScaling={false} style={styles.title}>Username:</Text>
             <Text allowFontScaling={false} style={styles.badUname}>{conflict}</Text>
           </View>
           <TextInput
+            autoCapitalize="none"
             allowFontScaling={false}
             style={styles.textInput}
             value={username}
@@ -140,6 +143,7 @@ function LoginPage () {
             />
           <Text allowFontScaling={false} style={styles.title}>Password:</Text>
           <TextInput
+            autoCapitalize="none"
             allowFontScaling={false}
             style={styles.textInput}
             value={password}
@@ -172,7 +176,7 @@ function LoginPage () {
               setConflict('');
             }}
             >
-            <Text style={{fontSize: height * 0.025, marginTop: height * 0.025, marginLeft: width * 0.1}}>{'<'} Back</Text>
+            <Text style={{fontSize: height * 0.025, marginTop: height * 0.025, marginLeft: width * 0.15}}>{'<'} Back</Text>
           </TouchableOpacity>
           <Text allowFontScaling={false} style={[styles.title, {marginTop: height * 0.025}]}>Enter Your Username:</Text>
           <Text style={nfStyle}>*Username Not Recognized</Text>
@@ -186,7 +190,7 @@ function LoginPage () {
             }}
             />
           <TouchableOpacity
-            style={{marginBottom: width * 0.5, marginLeft: width * 0.5, borderWidth: width * 0.002, borderRadius: 5, width: width * 0.35, height: height * 0.06 }}
+            style={{marginBottom: height * 0.25, alignSelf: "center", borderWidth: height * 0.001, borderRadius: 5, width: height * 0.175, height: height * 0.06 }}
             onPress={() => sendRecoveryEmail()}
             >
             <Text allowFontScaling={false} style={styles.loginText}>Submit</Text>
@@ -198,8 +202,7 @@ function LoginPage () {
 
 const styles = StyleSheet.create({
   bigIcon: {
-    width: height * 0.2,
-    height: height * 0.2,
+    width: height * 0.3,
     alignSelf: "center",
     marginTop: height * 0.1,
     marginBottom: height * 0.025,
@@ -226,13 +229,13 @@ const styles = StyleSheet.create({
     width: width * 0.7,
     height: height * 0.05,
     marginLeft: width * 0.15,
-    marginBottom: width * 0.02,
+    marginBottom: height * 0.01,
     padding: height * 0.01,
     borderRadius: 5
   },
   login: {
     backgroundColor: "#d6d6d7",
-    width: width * 0.3,
+    width: height * 0.2,
     height: height * 0.055,
     marginTop: height * 0.03,
     alignSelf: "center",

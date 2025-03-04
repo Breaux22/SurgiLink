@@ -13,7 +13,6 @@ import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import { useStripe, StripeProvider } from "@stripe/stripe-react-native"
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -81,7 +80,7 @@ function SettingsPage () {
   const [newUsername, setNewUsername] = useState('');
   const [newPass1, setNewPass1] = useState('');
   const [newPass2, setNewPass2] = useState('');
-  const [userList, setUserList] = useState([]);
+  const [userList, setUserList] = useState(null);
   const [newPassWarning, setNewPassWarning] = useState(null);
   const [usernameWarning, setUsernameWarning] = useState(null);
   const [price, setPrice] = useState(0);
@@ -91,7 +90,6 @@ function SettingsPage () {
   const [customerId, setCustomerId] = useState(null);
   const [role, setRole] = useState('');
   const [lastFour, setLastFour] = useState(null);
-  const [subEndDate, setSubEndDate] = useState('');
   const isFirstLoad = useRef(true);
 
   useEffect(() => {
@@ -235,7 +233,7 @@ function SettingsPage () {
 
   async function getPrice() {
     const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
-    setPrice(userInfo.monthlyPrice * userInfo.discount);
+    setPrice(userInfo.monthlyPrice);
     return;
   }
 
@@ -273,8 +271,7 @@ function SettingsPage () {
       sessionString: userInfo.sessionString,
       password: passCheck,
       username: userInfo.username,
-      customerId: userInfo.stripeCustId,
-      subscriptionId: userInfo.stripeSubId,
+      customerId: userInfo.stripeCust
     }
     const headers = {        
       'method': 'POST',         
@@ -325,7 +322,7 @@ function SettingsPage () {
         await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo), {
           keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY, // iOS security setting
         });
-        setPrice(data.newPrice * userInfo.discount);
+        setPrice(data.newPrice);
         return
       })
   }
@@ -400,7 +397,7 @@ function SettingsPage () {
             await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo), {
               keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
             });
-            setPrice(data.newPrice * userInfo.discount);
+            setPrice(data.newPrice);
             setNewPassWarning(null);
             setUsernameWarning(null);
             getGroupUsers();
@@ -720,19 +717,6 @@ function SettingsPage () {
       return response;
     }
 
-    async function getSubEndDate () {
-      try {
-        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
-        const date = new Date(userInfo.subEndDate);
-        const month = date.toLocaleString('en-US', { month: 'short' });
-        const day = String(date.getDate()).padStart(2, '0'); // Ensures two digits
-        const year = date.getFullYear();
-        setSubEndDate(`${month} ${day}, ${year}`);
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
     async function hideEdits(setList, isVisible) {
       if (isVisible == 1) {
         // hide
@@ -764,7 +748,6 @@ function SettingsPage () {
           getGroupUsers();
           getPrice();
           const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
-          getSubEndDate();
           if (userInfo.role == 'admin'){setIsAdmin(true)}
         })();    
 
@@ -772,8 +755,7 @@ function SettingsPage () {
     }, [])
 
     return (
-      <SafeAreaView style={{backgroundColor: "#fff"}}>
-        <Image source={require('../../assets/icons/surgilink-logo.png')} resizeMode="contain" style={{position: "absolute", marginTop: useSafeAreaInsets().top, alignSelf: "center", height: height * 0.05,}}/>
+      <SafeAreaView>
         <View style={styles.row}>
             <View style={styles.menuButtons}>
                 <TouchableOpacity 
@@ -904,7 +886,7 @@ function SettingsPage () {
           <View style={accountDetails3}>
             <View style={styles.row}>
               <Text allowFontScaling={false} style={{
-                width: height * 0.125,
+                width: height * 0.09,
               }}>Email:</Text>
               <Text allowFontScaling={false} style={{
                 fontSize: height * 0.025,
@@ -914,7 +896,7 @@ function SettingsPage () {
             </View>
             <View style={styles.row}>
               <Text allowFontScaling={false} style={{
-                  width: height * 0.125,
+                  width: height * 0.09,
                 }}>Username:</Text>
               <Text allowFontScaling={false} style={{
                   fontSize: height * 0.025,
@@ -928,11 +910,9 @@ function SettingsPage () {
               <Text allowFontScaling={false} style={{
                 color: "#E61212",
                 fontSize: height * 0.025,
-                textAlign: "center",
                 borderBottomWidth: width * 0.002,
-                width: height * 0.235,
+                width: height * 0.225,
                 borderBottomColor: "#e61212",
-                marginTop: height * 0.01,
                 marginBottom: height * 0.01,
               }}>Cancel Subscription</Text>
             </TouchableOpacity>}
@@ -1047,12 +1027,16 @@ function SettingsPage () {
             </View>
             <View style={subscription3}>
               <View style={styles.row}>
+                <Text allowFontScaling={false} style={{width: height * 0.2,}}>Status:</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.025, color: "#077eed", marginLeft: height * 0.01, marginTop: -height * 0.005, marginBottom: height * 0.01, fontWeight: "bold",}}>Active</Text>
+              </View>
+              <View style={styles.row}>
                 <Text allowFontScaling={false} style={{width: height * 0.2,}}>Plan Price:</Text>
                 <Text allowFontScaling={false} style={{fontSize: height * 0.025, color: "#077eed", marginLeft: height * 0.01, marginTop: -height * 0.005, marginBottom: height * 0.01, fontWeight: "bold",}}>${price}/Month</Text>
               </View>
               <View style={styles.row}>
                 <Text allowFontScaling={false} style={{width: height * 0.2,}}>Next Bill Date:</Text>
-                <Text allowFontScaling={false} style={{fontSize: height * 0.025, color: "#077eed", marginLeft: height * 0.01, marginTop: -height * 0.005, marginBottom: height * 0.01, fontWeight: "bold",}}>{subEndDate}</Text>
+                <Text allowFontScaling={false} style={{fontSize: height * 0.025, color: "#077eed", marginLeft: height * 0.01, marginTop: -height * 0.005, marginBottom: height * 0.01, fontWeight: "bold",}}>2/27/2025</Text>
               </View>
               <View style={styles.row}>
                 <Text allowFontScaling={false} style={{width: height * 0.2,}}>Payment Info:</Text>
@@ -1070,7 +1054,7 @@ function SettingsPage () {
               </View>
               <Text allowFontScaling={false} style={{width: height * 0.2, marginBottom: height * 0.01,}}>Sub-User List:</Text>
               <View style={{marginBottom: height * 0.02,}}>
-                {userList.map((item, index) => (
+                {userList && userList.map((item, index) => (
                   <View key={item.username} style={[styles.row, {marginBottom: height * 0.01,}]}>
                     <Text allowFontScaling={false} style={{marginLeft: height * 0.02, width: height * 0.26}}>{item.username}</Text>
                     <TouchableOpacity

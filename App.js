@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState, React } from 'react';
+import { useState, React, useEffect } from 'react';
+import * as Linking from 'expo-linking';
 import { StyleSheet, Text, SafeAreaView, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,115 +23,130 @@ import bCaseList from './pages/business/ListViewPage_b';
 import bSettings from './pages/business/Settings_b';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import { StripeProvider } from "@stripe/stripe-react-native";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  useEffect(() => {
+    const handleDeepLink = (event) => {
+      console.log("Deep link triggered:", event.url);
+    };
+
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+  
   return (
-    <MemoryProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            animation: 'fade',
-            animationDuration: 100,
-          }}
-          >
-          <Stack.Screen name="Login" 
-            component={Login}            
-            options={{
+    <StripeProvider publishableKey="pk_live_51Qw7n8Cu4Ft2KEsfaSeMME8fSli7pl3UsgsxhMNOSjljkdCIpUf0wNbiRW4x19LOBYpvIYEf3eGCQVim96S1JNbs00yqqVsTyx">
+      <MemoryProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
               headerShown: false,
-            }} />
-          <Stack.Screen name="Sign Up" 
-            component={SignUp}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Monthly View" 
-            component={iMonthly}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Weekly View" 
-            component={iWeekly}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Case Info"
-              component={iCase}
+              animation: 'fade',
+              animationDuration: 100,
+            }}
+            >
+            <Stack.Screen name="Login" 
+              component={Login}            
               options={{
                 headerShown: false,
-              }}
-          />
-          <Stack.Screen name="Create New Case"
-            component={iNewCase}
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Take Picture" 
-            component={iCamera}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="List Cases" 
-            component={iCaseList}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="List Trays" 
-            component={iTrayList}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Settings" 
-            component={iSettings}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Monthly View" 
-            component={bMonthly}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Weekly View" 
-            component={bWeekly}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Daily View" 
-            component={bDaily}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Case Info"
-              component={bCase}
+              }} />
+            <Stack.Screen name="Sign Up" 
+              component={SignUp}            
               options={{
                 headerShown: false,
-              }}
-          />
-          <Stack.Screen name="Business Create New Case"
-            component={bNewCase}
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Take Picture" 
-            component={bCamera}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business List Cases" 
-            component={bCaseList}            
-            options={{
-              headerShown: false,
-            }} />
-          <Stack.Screen name="Business Settings" 
-            component={bSettings}            
-            options={{
-              headerShown: false,
-            }} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </MemoryProvider>
+              }} />
+            <Stack.Screen name="Monthly View" 
+              component={iMonthly}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Weekly View" 
+              component={iWeekly}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Case Info"
+                component={iCase}
+                options={{
+                  headerShown: false,
+                }}
+            />
+            <Stack.Screen name="Create New Case"
+              component={iNewCase}
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Take Picture" 
+              component={iCamera}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="List Cases" 
+              component={iCaseList}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="List Trays" 
+              component={iTrayList}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Settings" 
+              component={iSettings}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Monthly View" 
+              component={bMonthly}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Weekly View" 
+              component={bWeekly}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Daily View" 
+              component={bDaily}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Case Info"
+                component={bCase}
+                options={{
+                  headerShown: false,
+                }}
+            />
+            <Stack.Screen name="Business Create New Case"
+              component={bNewCase}
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Take Picture" 
+              component={bCamera}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business List Cases" 
+              component={bCaseList}            
+              options={{
+                headerShown: false,
+              }} />
+            <Stack.Screen name="Business Settings" 
+              component={bSettings}            
+              options={{
+                headerShown: false,
+              }} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </MemoryProvider>
+    </StripeProvider>
   );
 }
 

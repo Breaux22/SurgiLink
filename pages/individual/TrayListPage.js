@@ -10,6 +10,7 @@ import ConsignmentSet from '../../components/ConsignmentSet/ConsignmentSet';
 import { useRoute } from "@react-navigation/native";
 import { utcToZonedTime, format } from 'date-fns-tz';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,17 +30,22 @@ const ListPage = () => {
     const [styleList, setStyleList] = useState([]);
     const [currTrayObj, setCurrTrayObj] = useState();
     const [currTray, setCurrTray] = useState('');
+    const [prevTray, setPrevTray] = useState('');
     const [location, setLocation] = useState('');
+    const [prevLocation, setPrevLocation] = useState('')
     const [prevStyle, setPrevStyle] = useState(styles.collapsed);
-    const [nameStyle, setNameStyle] = useState(styles.nameEdit);
+    const [nameStyle, setNameStyle] = useState(false);
     const [nameEditStyle, setNameEditStyle] = useState(styles.collapsed);
-    const [locationStyle, setLocationStyle] = useState(styles.nameEdit);
+    const [locationStyle, setLocationStyle] = useState(false);
     const [locationEditStyle, setLocationEditStyle] = useState(styles.collapsed);
     const [styleA, setStyleA] = useState(styles.prevG);
     const [styleB, setStyleB] = useState(styles.prevY);
     const [styleC, setStyleC] = useState(styles.prevR);
     const [newTray, setNewTray] = useState(false);
     const [newTrayText, setNewTrayText] = useState('');
+    const [trayNotes, setTrayNotes] = useState('');
+    const [prevNotes, setPrevNotes] = useState('');
+    const [notesEdit, setNotesEdit] = useState(false);
 
     async function makeStyleList (list) {
         var tempArr = list.map((item) => (styles.collapsed))
@@ -60,7 +66,7 @@ const ListPage = () => {
           },
           'body': JSON.stringify(data)
         }
-        const response = await fetch('https://surgiflow.replit.app/verifySession', headers)
+        const response = await fetch('https://SurgiLink.replit.app/verifySession', headers)
           .then(response => {
                 if (!response.ok){
                     console.error("Error - verifySession()")
@@ -92,7 +98,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/logout';
+        const url = 'https://SurgiLink.replit.app/logout';
         const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
@@ -105,7 +111,7 @@ const ListPage = () => {
 
     async function openMenu() {
         setOpenStyle(styles.collapsed);
-        setCloseStyle(styles.closeIcon);
+        setCloseStyle(styles.icon3);
         setMenuStyle(styles.menu);
         setBackBlur(styles.backBlur);
     }
@@ -148,6 +154,7 @@ const ListPage = () => {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
             trayName: newTrayText,
         }
@@ -158,13 +165,14 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/addTray';
+        const url = 'https://SurgiLink.replit.app/addTray';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
                     console.error("Error - addTray()")
                 } else {
                     getTrays();
+                    getTrayUses();
                     return;
                 }
             })
@@ -174,6 +182,7 @@ const ListPage = () => {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -183,7 +192,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getTrays';
+        const url = 'https://SurgiLink.replit.app/getTrays';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -202,6 +211,7 @@ const ListPage = () => {
         const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
         const data = {
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -211,7 +221,7 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/getTrayUses';
+        const url = 'https://SurgiLink.replit.app/getTrayUses';
         const response = await fetch(url, headers)
             .then(response => {
                 if (!response.ok){
@@ -231,6 +241,7 @@ const ListPage = () => {
         const data = {
             trayId: currTrayObj.id,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
             location: location
         }
@@ -241,16 +252,45 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/updateTrayLocation';
+        const url = 'https://SurgiLink.replit.app/updateTrayLocation';
         const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
                         console.error("Error - updateTrayLocation()")
                     }
+                    getTrays();
+                    getTrayUses();
                     return response.json()
                 })
-        getTrays();
-        getTrayUses();
+        return;
+    }
+
+    async function updateTrayNotes () {
+        const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
+        const data = {
+            trayId: currTrayObj.id,
+            userId: userInfo.id,
+            org: userInfo.org,
+            sessionString: userInfo.sessionString,
+            trayNotes: trayNotes
+        }
+        const headers = {
+            'method': 'POST',
+            'headers': {
+                'content-type': 'application/json'
+            },
+            'body': JSON.stringify(data)
+        }
+        const url = 'https://SurgiLink.replit.app/updateTrayNotes';
+        const response = await fetch(url, headers)
+            .then(response => {
+                    if (!response.ok){
+                        console.error("Error - updateTrayNotes()")
+                    }
+                    getTrays();
+                    getTrayUses();
+                    return response.json()
+                })
         return;
     }
 
@@ -260,6 +300,7 @@ const ListPage = () => {
             trayId: currTrayObj.id,
             newName: currTray,
             userId: userInfo.id,
+            org: userInfo.org,
             sessionString: userInfo.sessionString,
         }
         const headers = {
@@ -269,16 +310,16 @@ const ListPage = () => {
             },
             'body': JSON.stringify(data)
         }
-        const url = 'https://surgiflow.replit.app/updateTrayName';
+        const url = 'https://SurgiLink.replit.app/updateTrayName';
         const response = await fetch(url, headers)
             .then(response => {
                     if (!response.ok){
                         console.error("Error - getFacilities()")
                     }
+                    getTrays();
+                    getTrayUses();
                     return response.json()
                 })
-        getTrays();
-        getTrayUses();
         return;
     }
 
@@ -326,11 +367,8 @@ const ListPage = () => {
         const formatted = new Date(surgdate.getTime() + (1000*60*60*8));
         const today = new Date();
         const hoursToEnd = 24 - today.getHours();
-        console.log("HTE: ", hoursToEnd);
         const hoursFuture = (formatted.getTime() - today.getTime())/(1000*60*60);
-        console.log("HTF: ", hoursFuture);
         const daysFuture = Math.round((hoursFuture + today.getHours())/24);
-        console.log("DF Rounded: ", daysFuture)
         if (daysFuture == 0) {
             if (hoursFuture >= 0) {
                 return `TODAY, In ${Math.round(hoursFuture)} Hours`;   
@@ -361,21 +399,23 @@ const ListPage = () => {
     function fillUsesComp (myTray, myIndex) {
         setFutureUses(prevFutureUses => {
             const usesArr = prevFutureUses.filter((item) => 
-                new Date().getFullYear() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getFullYear()
-                && new Date().getMonth() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getMonth()
-                && new Date().getDate() <= new Date(new Date(item.surgdate).getTime()+(1000*60*60*8)).getDate()
-                && item.trayId == myTray.id);
+                new Date().getTime() <= new Date(item.surgdate).getTime()
+                && String(item.trayId) == String(myTray.id));
             setCurrTray(prev => myTray.trayName);
+            setPrevTray(myTray.trayName);
             setCurrTrayObj(myTray);
             setLocation(prev => myTray.location);
+            setPrevLocation(myTray.location);
+            setTrayNotes(prev => myTray.trayNotes);
+            setPrevNotes(myTray.trayNotes);
             if (usesArr.length > 0) {
                 setUsesComp(prev => 
                     <View>
-                        <ScrollView style={{height: height * 0.465}}>
+                        <View style={{height: height * 0.4}}>
                             {usesArr.map((item, index) => (
                                 <TouchableOpacity
                                     key={item + index}
-                                    style={{backgroundColor: item.color, width: width * 0.85, minHeight: width * 0.3, borderRadius: 5, borderWidth: width * 0.002, marginBottom: width * 0.02, paddingLeft: width * 0.02, paddingBottom: width * 0.01, }}
+                                    style={{backgroundColor: item.color, width: width * 0.85, minHeight: height * 0.15, borderRadius: 5, borderWidth: height * 0.001, marginBottom: height * 0.01, padding: width * 0.01, }}
                                     onPress={() => {
                                         navigation.reset({
                                             index: 0,
@@ -392,20 +432,20 @@ const ListPage = () => {
                                         })
                                     }}
                                     >
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,  borderBottomWidth: width * 0.002,}}>{daysFormat(new Date(item.surgdate))} @ {formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
-                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: width * 0.05,}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, width: width * 0.82,  borderBottomWidth: height * 0.001,}}>{daysFormat(new Date(item.surgdate))} @ {formatTo12HourTime(new Date(new Date(item.surgdate).getTime() + (1000*60*60*8)))}</Text>
+                                    <Text allowFontScaling={false} style={{fontWeight: "bold", fontSize: height * 0.025,}}>{item.surgeonName !== "Choose Surgeon..." ? item.surgeonName : "Surgeon?"}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, width: width * 0.8,}}>{item.proctype !== '' ? item.proctype : "~"}</Text>
                                     <Text allowFontScaling={false} style={{fontWeight: "bold", fontStyle: "italic"}}>Notes:</Text>
-                                    <Text allowFontScaling={false} style={{fontSize: width * 0.04, width: width * 0.8,}}>{item.notes !== '' ? item.notes : "~"}</Text>
+                                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, width: width * 0.8,}}>{item.notes !== '' ? item.notes : "~"}</Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
                     </View>
                 )
             } else {
                 setUsesComp(prev => 
                     <View>
-                        <Text allowFontScaling={false} style={{fontSize: width * 0.05, fontStyle: "italic", marginLeft: width * 0.02, }}>None.</Text>
+                        <Text allowFontScaling={false} style={{fontSize: height * 0.025, fontStyle: "italic", marginLeft: width * 0.02, }}>None.</Text>
                     </View>
                 )   
             }
@@ -422,10 +462,10 @@ const ListPage = () => {
                     <TouchableOpacity
                         key={item + index}
                         onPress={() => fillUsesComp(item, index)}
-                        style={{width: width * 0.955, height: width * 0.1, borderBottomWidth: width * 0.002, borderRightWidth: width * 0.002, marginLeft: width * 0.025, flexDirection: "row", backgroundColor: cellColor(index)}}
+                        style={{width: width * 0.96, height: height * 0.05, borderBottomWidth: height * 0.001, borderRightWidth: height * 0.001, marginLeft: width * 0.02, flexDirection: "row", backgroundColor: cellColor(index),}}
                         >
-                        <Text allowFontScaling={false} style={{borderLeftWidth: width * 0.002, width: width * 0.477, fontWeight: "bold", fontSize: width * 0.04, paddingLeft: width * 0.015, }}>{item.trayName}</Text>
-                        <Text allowFontScaling={false} style={{borderLeftWidth: width * 0.002, width: width * 0.477, fontWeight: "bold", fontSize: width * 0.04, paddingLeft: width * 0.015, }}>{item.location}</Text>
+                        <Text allowFontScaling={false} style={{borderLeftWidth: height * 0.001, width: width * 0.477, fontWeight: "bold", fontSize: height * 0.02, paddingLeft: width * 0.015, paddingTop: height * 0.01,}}>{item.trayName}</Text>
+                        <Text allowFontScaling={false} style={{borderLeftWidth: height * 0.001, width: width * 0.477, fontWeight: "bold", fontSize: height * 0.02, paddingLeft: width * 0.015,  paddingTop: height * 0.01,}}>{item.location}</Text>
                     </TouchableOpacity>
             ))
         )
@@ -445,6 +485,7 @@ const ListPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <Image source={require('../../assets/icons/surgilink-logo.png')} resizeMode="contain" style={{position: "absolute", marginTop: useSafeAreaInsets().top, alignSelf: "center", height: height * 0.05,}}/>
             <View style={styles.row}>
                 <View style={styles.menuButtons}>
                     <TouchableOpacity 
@@ -461,7 +502,7 @@ const ListPage = () => {
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity
-                    style={{marginLeft: - width * 0.115, marginTop: width * 0.01, zIndex: 1, }}
+                    style={{position: "absolute", right: width * 0.01, marginTop: height * 0.005, zIndex: 1, }}
                     onPress={() => {
                         navigation.reset({
                             index: 0,
@@ -469,7 +510,7 @@ const ListPage = () => {
                         })
                     }}
                     >
-                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: width * 0.09, height: width * 0.09, }}/>
+                    <Image source={require('../../assets/icons/plus-symbol-button.png')} style={{width: height * 0.045, height: height * 0.045, }}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -545,27 +586,24 @@ const ListPage = () => {
                         <Text allowFontScaling={false} style={styles.optionText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
-                <TouchableOpacity 
-                    style={backBlur}
-                    onPress={() => closeMenu()}
-                    ></TouchableOpacity>
+                <TouchableOpacity style={backBlur} onPress={() => closeMenu()}/>
             </View>
-            <Text allowFontScaling={false} style={{opacity: 0.4, marginLeft: width * 0.02}}>*you can also edit trays in Settings</Text>
+            <Text allowFontScaling={false} style={{opacity: 0.4, marginLeft: width * 0.02, marginTop: height * 0.01,}}>*you can also edit trays in Settings</Text>
             {!newTray && <TouchableOpacity
                 onPress={() => setNewTray(true)}
                 >
                 <Text allowFontScaling={false} style={{
-                    height: width * 0.1,
+                    height: height * 0.05,
                     width: width * 0.96,
                     backgroundColor: "#ededed",
                     borderRadius: 5,
-                    borderWidth: width * 0.002,
+                    borderWidth: height * 0.001,
                     marginLeft: width * 0.02,
-                    marginTop: width * 0.02,
-                    marginBottom: width * 0.02,
+                    marginTop: height * 0.01,
+                    marginBottom: height * 0.01,
                     textAlign: "center",
-                    fontSize: width * 0.06,
-                    paddingTop: width * 0.01,
+                    fontSize: height * 0.03,
+                    paddingTop: height * 0.005,
                 }}>Add New Tray +</Text>
             </TouchableOpacity>}
             {newTray && <View style={styles.row}>
@@ -575,15 +613,15 @@ const ListPage = () => {
                     onChangeText={(input) => setNewTrayText(input)}
                     placeholder={"Enter New Tray Name"}
                     style={{
-                        height: width * 0.1,
+                        height: height * 0.05,
                         width: width * 0.8,
                         backgroundColor: "#ededed",
                         borderRadius: 5,
-                        borderWidth: width * 0.002,
+                        borderWidth: height * 0.001,
                         marginLeft: width * 0.02,
-                        marginTop: width * 0.02,
-                        marginBottom: width * 0.02,
-                        padding: width * 0.01,
+                        marginTop: height * 0.01,
+                        marginBottom: height * 0.01,
+                        padding: height * 0.005,
                     }}
                     />
                 <TouchableOpacity
@@ -594,16 +632,16 @@ const ListPage = () => {
                     }}
                     >
                     <Text allowFontScaling={false} style={{
-                        height: width * 0.1,
+                        height: height * 0.05,
                         width: width * 0.15,
                         backgroundColor: "#d6d6d7",
+                        textAlign: "center",
+                        marginTop: height * 0.01,
                         marginLeft: width * 0.01,
-                        marginTop: width * 0.02,
-                        marginBottom: width * 0.02,
+                        marginBottom: height * 0.01,
                         borderRadius: 5,
-                        fontSize: width * 0.05,
-                        paddingLeft: width * 0.02,
-                        paddingTop: width * 0.02,
+                        fontSize: height * 0.025,
+                        paddingTop: height * 0.01,
                     }}>Save</Text>
                 </TouchableOpacity>
             </View>}
@@ -611,90 +649,151 @@ const ListPage = () => {
                 <View style={styles.cell}>
                     <Text allowFontScaling={false} style={styles.columnText}>Tray</Text>
                 </View>
-                <View style={[styles.cell, {borderLeftWidth: width * 0.003, borderColor: "#d6d6d6", }]}>
+                <View style={[styles.cell, {borderLeftWidth: height * 0.0015, borderColor: "#d6d6d6", }]}>
                     <Text allowFontScaling={false} style={styles.columnText}>Current Location</Text>
                 </View>
             </View>
-            <ScrollView style={{maxHeight: height * 0.74, }}>
+            <ScrollView style={{minHeight: height * 0.74, maxHeight: height * 0.74, }}>
                 {traysComp}
             </ScrollView>
             
             {/* #### BEGIN PREVIEW SECTION #### */}
             
             <View style={prevStyle}>
-                <View style={{backgroundColor: "#fff", width: width * 0.9, height: height * 0.8, marginLeft: width * 0.05, marginTop: width * 0.07, padding: width * 0.02, }}>
+                <ScrollView style={{backgroundColor: "#fff", width: width * 0.9, minHeight: height * 0.8, maxHeight: height * 0.8, marginLeft: width * 0.05, marginTop: height * 0.035, padding: width * 0.023,}}>
                     <TouchableOpacity
                         onPress={() => {
                             setPrevStyle(styles.collapsed);
                             setUsesComp(null);
                         }}
                         >
-                        <Image source={require('../../assets/icons/close.png')} style={{width: width * 0.1, height: width * 0.1, }}/>
+                        <Image source={require('../../assets/icons/close.png')} style={{width: height * 0.05, height: height * 0.05, }}/>
                     </TouchableOpacity>
                     
+                    <View style={[styles.row, {marginTop: height * 0.01,}]}>
+                        <Text allowFontScaling={false} style={{marginBottom: height * 0.005, fontSize: height * 0.02,}}>Tray Name:</Text>
+                        {!nameStyle && <TouchableOpacity
+                            onPress={() => {
+                                setNameStyle(true);
+                            }}
+                            style={{position: "absolute", right: height * 0.01,}}
+                            >
+                            <Text allowFontScaling={false} style={{color: "rgba(0, 122, 255, 0.8)", fontSize: height * 0.02,}}>- Edit</Text>
+                        </TouchableOpacity>}
+                        {nameStyle && <View style={[styles.row, {position: "absolute", right: width * 0.006}]}>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setNameStyle(false);
+                                    setCurrTray(prevTray);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setNameStyle(false);
+                                    updateTrayName();
+                                    setPrevTray(currTray);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Save</Text>
+                                </TouchableOpacity>
+                            </View>}
+                    </View>
+                    {!nameStyle && <Text allowFontScaling={false} style={{fontSize: height * 0.02, fontWeight: "bold", marginBottom: height * 0.015,}}>{currTray}</Text>}
+                    {nameStyle && <TextInput
+                        value={currTray}
+                        placeholder="Enter Unique Name of Tray"
+                        style={{padding: height * 0.005, width: width * 0.85, height: height * 0.03, backgroundColor: "#ededed", borderRadius: 5, borderWidth: height * 0.00125, marginBottom: height * 0.01,}}
+                        onChangeText={(input) => setCurrTray(input)}
+                        />}
                     <View style={styles.row}>
-                        <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, }}>Tray Name:</Text>
-                        <TouchableOpacity
+                        <Text allowFontScaling={false} style={{marginBottom: height * 0.005, fontSize: height * 0.02,}}>Tray Location:</Text>
+                        {!locationStyle && <TouchableOpacity
                             onPress={() => {
-                                setNameStyle(styles.collapsed);
-                                setNameEditStyle(styles.row);
+                                setLocationStyle(true);
                             }}
+                            style={{position: "absolute", right: height * 0.01,}}
                             >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, color: "rgba(0, 122, 255, 0.8)", marginTop: width * 0.021, }}> - Edit</Text>
-                        </TouchableOpacity>
+                            <Text allowFontScaling={false} style={{color: "rgba(0, 122, 255, 0.8)", fontSize: height * 0.02,}}>- Edit</Text>
+                        </TouchableOpacity>}
+                        {locationStyle && <View style={[styles.row, {position: "absolute", right: width * 0.006}]}>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setLocationStyle(false);
+                                    setLocation(prevLocation);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setLocationStyle(false);
+                                    updateTrayLocation();
+                                    setPrevLocation(location);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Save</Text>
+                                </TouchableOpacity>
+                            </View>}
                     </View>
-                    <View style={nameEditStyle}>
-                        <TextInput 
-                            style={{width: width * 0.64, height: width * 0.08, padding: width * 0.01, borderRadius: 5, backgroundColor: "#ededed"}}
-                            placeholder={"Enter New Tray Name..."}
-                            value={currTray}
-                            onChangeText={(input) => setCurrTray(prev => input)}
-                            />
-                        <TouchableOpacity
-                            style={{width: width * 0.2, height: width * 0.08, marginLeft: width * 0.01, backgroundColor: "#d6d6d7", borderRadius: 5, }}
-                            onPress={() => {
-                                setNameStyle(styles.nameEdit);
-                                setNameEditStyle(styles.collapsed);
-                                updateTrayName();
-                            }}
-                            >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.04, }}>Save</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text allowFontScaling={false} style={nameStyle}>{currTray}</Text>
+                    {!locationStyle && <Text allowFontScaling={false}  style={{fontSize: height * 0.02, fontWeight: "bold", marginBottom: height * 0.015,}}>{location}</Text>}
+                    {locationStyle && <TextInput 
+                        value={location}
+                        placeholder="Enter Tray Current Location"
+                        style={{padding: height * 0.005, width: width * 0.85, height: height * 0.03, backgroundColor: "#ededed", borderRadius: 5, borderWidth: height * 0.00125, marginBottom: height * 0.01,}}
+                        onChangeText={(input) => setLocation(input)}
+                        />}
                     <View style={styles.row}>
-                        <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, }}>Tray Location:</Text>
-                        <TouchableOpacity
+                        <Text allowFontScaling={false} style={{marginBottom: height * 0.005, fontSize: height * 0.02,}}>Tray Notes:</Text>
+                        {!notesEdit && <TouchableOpacity
                             onPress={() => {
-                                setLocationStyle(styles.collapsed);
-                                setLocationEditStyle(styles.row);
+                                setNotesEdit(true);
                             }}
+                            style={{position: "absolute", right: height * 0.01,}}
                             >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.05, color: "rgba(0, 122, 255, 0.8)", marginTop: width * 0.021, }}> - Edit</Text>
-                        </TouchableOpacity>
+                            <Text allowFontScaling={false} style={{color: "rgba(0, 122, 255, 0.8)", fontSize: height * 0.02,}}>- Edit</Text>
+                        </TouchableOpacity>}
+                        {notesEdit && 
+                            <View style={[styles.row, {position: "absolute", right: width * 0.006}]}>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setNotesEdit(false);
+                                    setTrayNotes(prevNotes);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                onPress={() => {
+                                    setNotesEdit(false);
+                                    updateTrayNotes();
+                                    setPrevNotes(trayNotes);
+                                }}
+                                style={{ width: width * 0.2, paddingLeft: width * 0.01, paddingRight: width * 0.01, borderRadius: 5, borderWidth: height * 0.00125,}}
+                                >
+                                <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", }}>Save</Text>
+                                </TouchableOpacity>
+                            </View>}
                     </View>
-                    <View style={locationEditStyle}>
-                        <TextInput 
-                            style={{width: width * 0.64, height: width * 0.08, padding: width * 0.01, borderRadius: 5, backgroundColor: "#ededed"}}
-                            placeholder={"Update Location..."}
-                            value={location}
-                            onChangeText={(input) => setLocation(prev => input)}
-                            />
-                        <TouchableOpacity
-                            style={{width: width * 0.2, height: width * 0.08, marginLeft: width * 0.01, backgroundColor: "#d6d6d7", borderRadius: 5, }}
-                            onPress={() => {
-                                setLocationStyle(styles.nameEdit);
-                                setLocationEditStyle(styles.collapsed);
-                                updateTrayLocation();
-                            }}
-                            >
-                            <Text allowFontScaling={false} style={{fontSize: width * 0.06, marginLeft: width * 0.04, }}>Save</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text allowFontScaling={false} style={locationStyle}>{location}</Text>
-                    <Text allowFontScaling={false} style={{fontSize: width * 0.05, marginTop: width * 0.02, marginBottom: width * 0.02, }}>Upcoming Cases:</Text>
+                    {!notesEdit && <Text allowFontScaling={false} e style={{fontSize: height * 0.02, marginBottom: height * 0.02, textAlign: "justify", width: width * 0.85,}}>{trayNotes}</Text>}
+                    {notesEdit && <TextInput 
+                        multiline={true}
+                        scrollable={true}
+                        value={trayNotes}
+                        placeholder="Missing Instruments, etc..."
+                        style={{padding: height * 0.01, width: width * 0.85, height: height * 0.1, backgroundColor: "#ededed", borderRadius: 5, borderWidth: height * 0.00125,}}
+                        onChangeText={(input) => setTrayNotes(input)}
+                        />}
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.025, marginBottom: height * 0.01, }}>Upcoming Cases:</Text>
                     {usesComp}
-                </View>
+                    <View style={{height: height * 0.1}}/>
+                </ScrollView>
             </View>
         </SafeAreaView>
     );
@@ -703,7 +802,7 @@ const ListPage = () => {
   const styles = StyleSheet.create({
     nameEdit: {
         fontWeight: "bold",
-        fontSize: width * 0.06,
+        fontSize: height * 0.02,
         flexDirection: "row",
     },
     container: {
@@ -719,56 +818,56 @@ const ListPage = () => {
     new: {
         backgroundColor: "#8a8a8a",
         width: width * 0.17,
-        height: width * 0.17,
+        height: height * 0.057,
         marginLeft: width * 0.36,
-        marginTop: - width * 0.045,
+        marginTop: - height * 0.0225,
         borderRadius: 5,
     },
     newText: {
         color: "#fefefe",
-        fontSize: width * 0.18,
-        marginTop: - width * 0.035,
+        fontSize: height * 0.09,
+        marginTop: - height * 0.0175,
         marginLeft: width * 0.035
     },
     monthYear: {
-        fontSize: width * 0.06,
+        fontSize: height * 0.03,
         width: width * 0.56,
         marginLeft: width * 0.02,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
     },
     arrow: {
         backgroundColor: "rgba(0, 122, 255, 0.8)",
         width: width * 0.2,
-        height: width * 0.1,
+        height: height * 0.05,
         borderRadius: 5,
         margin: width * 0.025,
     },
     arrow2: {
         backgroundColor: "rgba(0, 122, 255, 0.8)",
         width: width * 0.2,
-        height: width * 0.1,
+        height: height * 0.05,
         borderRadius: 5,
-        marginTop: width * 0.025,
+        marginTop: height * 0.015,
     },
     arrowIcon: {
-        width: width * 0.06,
-        height: width * 0.06,
+        width: height * 0.03,
+        height: height * 0.03,
         marginLeft: width * 0.06,
-        marginTop: width * 0.02
+        marginTop: height * 0.01
     },      
     arrowIcon2: {
-          width: width * 0.06,
-          height: width * 0.06,
+          width: height * 0.03,
+          height: height * 0.03,
           marginLeft: width * 0.075,
-          marginTop: width * 0.02
+          marginTop: height * 0.01
     },
     statBox: {
         width: width * 0.984,
-        minHeight: width * 0.15,
-        maxHeight: width * 0.4,
-        paddingTop: width * 0.02,
-        borderWidth: width * 0.002,
-        marginTop: - width * 0.002
+        minheight: height * 0.055,
+        maxHeight: height * 0.2,
+        paddingTop: height * 0.01,
+        borderWidth: height * 0.001,
+        marginTop: - height * 0.001
     },
     grid: {
         width: width * 0.985,
@@ -776,349 +875,199 @@ const ListPage = () => {
     },
     columns: {
         flexDirection: 'row',
-        marginLeft: width * 0.025,
+        marginLeft: width * 0.02,
         backgroundColor: "#333436",
-        width: width * 0.955,
+        width: width * 0.96,
         borderTopLeftRadius: 5,
         borderTopRightRadius: 5,
     },
     columnText: {
         color: "#ffffff",
-        fontSize: width * 0.04
+        fontSize: height * 0.02
     },
     cell: {
         flexDirection: "row",
         width: width * 0.477,
-        minHeight: width * 0.11,
-        padding: width * 0.01,
+        minheight: height * 0.051,
+        padding: height * 0.005,
     },
     prevG: {
         backgroundColor: "#32a852",
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.065,
-        paddingTop: width * 0.013,
+        paddingTop: height * 0.0065,
     },
     prevGB: {
         backgroundColor: "#32a852",
-        borderWidth: width * 0.005,
+        borderWidth: height * 0.0025,
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.06,
-        paddingTop: width * 0.008,
+        paddingTop: height * 0.004,
     },
     prevY: {
         backgroundColor: "#d1cc6f",
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.12,
-        paddingTop: width * 0.013
+        paddingTop: height * 0.0065
     },
     prevYB: {
         backgroundColor: "#d1cc6f",
-        borderWidth: width * 0.005,
+        borderWidth: height * 0.0025,
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.115,
-        paddingTop: width * 0.008
+        paddingTop: height * 0.004
     },
     prevR: {
         backgroundColor: "#d16f6f",
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.085,
-        paddingTop: width * 0.013,
+        paddingTop: height * 0.0065,
     },
     prevRB: {
         backgroundColor: "#d16f6f",
-        borderWidth: width * 0.005,
+        borderWidth: height * 0.0025,
         width: width * 0.27,
-        height: width * 0.09,
+        height: height * 0.045,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
         paddingLeft: width * 0.08,
-        paddingTop: width * 0.008
+        paddingTop: height * 0.004
     },
     cellGreen: {
           backgroundColor: "#32a852",
-          borderLeftWidth: width * 0.002,
-          borderBottomWidth: width * 0.002,
-          height: width * 0.11,
-          padding: width * 0.01,
+          borderLeftWidth: height * 0.001,
+          borderBottomWidth: height * 0.001,
+          height: height * 0.051,
+          padding: height * 0.005,
     },
     cellYellow: {
           backgroundColor: "#d1cc6f",
-          borderLeftWidth: width * 0.002,
-          borderBottomWidth: width * 0.002,
-          height: width * 0.11,
-          padding: width * 0.01,
+          borderLeftWidth: height * 0.001,
+          borderBottomWidth: height * 0.001,
+          height: height * 0.051,
+          padding: height * 0.005,
     },
     cellRed: {
           backgroundColor: "#d16f6f",
-          borderLeftWidth: width * 0.002,
-          borderBottomWidth: width * 0.002,
-          height: width * 0.11,
-          padding: width * 0.01,
+          borderLeftWidth: height * 0.001,
+          borderBottomWidth: height * 0.001,
+          height: height * 0.051,
+          padding: height * 0.005,
     },
     cellDark: {
         flexDirection: "row",
-        borderLeftWidth: width * 0.002,
-        borderBottomWidth: width * 0.002,
+        borderLeftWidth: height * 0.001,
+        borderBottomWidth: height * 0.001,
         width: width * 0.44,
-        height: width * 0.11,
-        padding: width * 0.01,
+        height: height * 0.051,
+        padding: height * 0.005,
         backgroundColor: "#d4d6d6",
     },
     cellText: {
-        fontSize: width * 0.035,
-    },
-    tzPicker: {
-      fontSize: width * 0.01  
-    },
-    title: {
-        color: "#292c3b",
-        marginLeft: width * 0.02,
-        marginTop: 8,
-    },
-    body: {
-        color: "#292c3b",
-        marginLeft: width * 0.02,
-        marginTop: 8,
-        fontSize: width * 0.03
-    },
-    textInput: {
-        color: "#39404d"
-    },
-    expandingTextInput: {
-        width: width * 0.98,
-        marginLeft: width * 0.02,
-        marginTop: 5,
-        padding: 8,
-        borderRadius: 4,
-        backgroundColor: '#ededed'
-    },
-    textBox: {
-        width: width * 0.96,
-        height: 32,
-        marginLeft: width * 0.02,
-        marginTop: 5,
-        padding: 8,
-        borderRadius: 4,
-        backgroundColor: '#ededed'
-    },
-    bigTextBox: {
-        width: width * 0.96,
-        height: 100,
-        marginLeft: width * 0.02,
-        marginTop: 5,
-        padding: 14,
-        borderRadius: 4,
-        backgroundColor: '#ededed'
-    },
-    bottom: {
-        marginBottom: 350
-    },
-    previewBox: {
-        position: 'absolute',
-        zIndex: 1,
-        width: width,
-        height: height * 0.9,
-        marginTop: height * 0.1,
-        backgroundColor: "rgba(10,10,10,0.65)",
+        fontSize: height * 0.0175,
     },
     preview: {
         zIndex: 1,
         position: "absolute",
         width: width,
         minHeight: height * 0.89,
-        marginTop: width * 0.245,
+        overflow: "hidden",
+        marginTop: height * 0.1225,
         backgroundColor: "rgba(51,52,54, 0.6)",
         opacity: 1,
-    },
-    largeButton: {
-        backgroundColor: '#ededed',
-        width: width * 0.4,
-        height: 35,
-        borderRadius: 5,
-        marginLeft: width * 0.025,
-        marginTop: 15
-    },
-    button: {
-        backgroundColor: '#ededed',
-        width: width * 0.45,
-        height: 50,
-        borderRadius: 5,
-        marginTop: 35,
-        marginLeft: width * 0.02
     },
     smallButton: {
         backgroundColor: '#e3dede',
         width: width * 0.235,
-        height: width * 0.08,
+        height: height * 0.04,
         borderRadius: 5,
-        marginTop: width * 0.01,
+        marginTop: height * 0.005,
         marginLeft: width * 0.01,
-    },
-    smallCancel: {
-        backgroundColor: '#eb4034',
-        width: width * 0.2,
-        height: 25,
-        borderRadius: 5,
-        marginTop: 8,
-        marginLeft: width * 0.455
-    },
-    smallButtonText: {
-        color: "#ffffff",
-        fontSize: width * 0.04,
-        marginLeft: width * 0.03,
-        marginTop: 3
-    },
-    buttonText: {
-        fontSize: width * 0.08,
-        marginLeft: width * 0.03,
-        marginTop: 5
-    },
-    calendar: {
-        marginTop: 5,
-        position: "absolute",
-        marginLeft: width * 0.001
-    },
-    time: {
-        marginTop: 5
-    },
-    timezone: {
-        marginTop: 5,
-        marginLeft: width * 0.756,
-        width: width * 0.22,
-        height: 30,
-        borderRadius: 7,
-        backgroundColor: "#ededed",
-        flexDirection: 'row'
     },
     collapsed: {
         display: 'none'
-    },
-    close: {
-        color: "#ffffff",
-        backgroundColor: '#39404d',
-        textAlign: 'center',
-        paddingBottom: 15,
-        fontSize: 30
-    },
-    picture: {
-        backgroundColor: '#007AFF',
-        width: width * 0.45,
-        height: 50,
-        borderRadius: 5,
-        marginTop: 35,
-        marginLeft: width * 0.02
-    },
-    pictureText: {
-        color: "#ffffff",
-        fontSize: width * 0.08,
-        marginLeft: width * 0.05,
-        marginTop: 5
-    },
-    icon: {
-        height: width * 0.065,
-        width: width * 0.065,
-        marginTop: 5,
-        marginLeft: width * 0.015
     },
     menu: {
         position: "absolute", 
         backgroundColor: "#fff", 
         height: height, 
-        width: width * 0.7, 
-        zIndex: 1, 
+        width: height * 0.35, 
+        zIndex: 3,
         opacity: 0.98
     },
     backBlur: {
-        backgroundColor: "rgba(211, 211, 211, 0.5)", 
-        zIndex: 1, 
+        backgroundColor: "rgba(0, 0, 0, 0.5)", 
+        zIndex: 2, 
         height: height, 
-        width: width * 0.3, 
-        position: "absolute", 
-        marginLeft: width * 0.7
+        width: width, 
+        position: "absolute",
     },
     option: {
-          backgroundColor: "rgba(0, 122, 255, 0.8)",
-          width: width * 0.4,
-          height: width * 0.09,
-          marginBottom: width * 0.02,
-          borderRadius: 5
-    },
-    optionText: {
-          color: "#fff",
-          fontSize: width * 0.06,
-          marginTop: width * 0.0075,
-          textAlign: "center"
-    },
-    menuButtons: {
-        borderBottomWidth: width * 0.002,
-        borderBottomColor: "#cfcfcf",
-        height: width * 0.124,
-        width: width,
+        width: width * 0.4,
+        height: height * 0.045,
+        marginLeft: height * 0.01,
+        marginTop: height * 0.02,
+        marginBottom: height * 0.01,
+        borderRadius: 5,
         flexDirection: "row",
     },
-    collapsed: {
-          display: 'none',
+    optionText: {
+        fontSize: height * 0.03,
+        marginTop: height * 0.00375,
+        textAlign: "center",
+        borderBottomWidth: height * 0.001,
+        marginLeft: width * 0.02,
+    },
+    menuButtons: {
+          borderBottomWidth: height * 0.00125,
+          borderBottomColor: "#cfcfcf",
+          height: height * 0.0625,
+          width: width,
     },
     icon1: {
-        width: width * 0.05,
-        height: width * 0.05,
+        width: height * 0.025,
+        height: height * 0.025,
         marginLeft: width * 0.02,
-        marginBottom: width * 0.01,
+        marginBottom: height * 0.005,
         opacity: 0.4
     },
     icon2: {
           position: "absolute",
-          width: width * 0.05,
-          height: width * 0.05,
+          width: height * 0.025,
+          height: height * 0.025,
           marginLeft: width * 0.38,
-          marginTop: width * 0.01,
+          marginTop: height * 0.005,
     },
     icon3: {
-        width: width * 0.1,
-        height: width * 0.1,
-        marginLeft: width * 0.02,
+          width: height * 0.05,
+          height: height * 0.05,
+          marginLeft: width * 0.02,
     },
     closeIcon: {
-        width: width * 0.1,
-        height: width * 0.1,
+        width: height * 0.05,
+        height: height * 0.05,
         marginLeft: - width * 0.18,
-    },
-    option: {
-          width: width * 0.4,
-          height: width * 0.09,
-          marginLeft: width * 0.02,
-          marginTop: width * 0.04,
-          marginBottom: width * 0.02,
-          borderRadius: 5,
-          flexDirection: "row",
-    },
-    optionText: {
-          fontSize: width * 0.06,
-          marginTop: width * 0.0075,
-          textAlign: "center",
-          borderBottomWidth: width * 0.002,
-          marginLeft: width * 0.02,
     },
 });
 
