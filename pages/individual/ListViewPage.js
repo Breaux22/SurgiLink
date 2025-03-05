@@ -14,10 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-
-// TODO:
-// Make sure preselected filters apply when changing month
-
 const ListPage = () => {
     const route = useRoute();
     const navigation = useNavigation();
@@ -566,7 +562,7 @@ const ListPage = () => {
                         fillRightBoxData('None');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>None</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.006, }}>None</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={{width: height * 0.16, height: height * 0.04, borderRadius: 2.5, marginLeft: height * 0.01125, marginTop: height * 0.01, borderWidth: height * 0.0015, }}
@@ -574,7 +570,7 @@ const ListPage = () => {
                         fillRightBoxData('Surgeons');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>Surgeons</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.006, }}>Surgeons</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={{width: height * 0.16, height: height * 0.04, borderRadius: 2.5, marginLeft: height * 0.01125, marginTop: height * 0.01, borderWidth: height * 0.0015, }}
@@ -582,10 +578,10 @@ const ListPage = () => {
                         fillRightBoxData('Facilities');
                     }}
                     >
-                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.0025, }}>Facilities</Text>
+                    <Text allowFontScaling={false} style={{fontSize: height * 0.02, textAlign: "center", marginTop: height * 0.006, }}>Facilities</Text>
                 </TouchableOpacity>
             </View>
-            <View style={rBoxStyle}>
+            <ScrollView style={rBoxStyle}>
                 {rBoxData.map((item, index) => (
                     <TouchableOpacity
                         key={item.surgeonName || item.facilityName}
@@ -618,7 +614,8 @@ const ListPage = () => {
                         <Text allowFontScaling={false} numberOfLines={1} ellipsizeMode="tail" style={rBoxStyles[index]}>{lButText == 'Surgeons' ? item.surgeonName : item.facilityName}</Text>
                     </TouchableOpacity>
                 ))}
-            </View>
+                <View style={{height: height * 0.015,}}/>
+            </ScrollView>
             <View style={styles.columns}>
                 <View style={styles.cell}>
                     <Text allowFontScaling={false} style={styles.columnText}>Date</Text>
@@ -696,8 +693,8 @@ const ListPage = () => {
           height: height * 0.04,
           borderRadius: 2.5,
           borderWidth: height * 0.0015,
-          paddingTop: height * 0.0055,
-          marginTop: height * 0.005,
+          paddingTop: height * 0.0076,
+          marginTop: height * 0.0055,
           textAlign: 'center',
       },
       buttonDark: {
@@ -705,8 +702,8 @@ const ListPage = () => {
         height: height * 0.04,
         borderRadius: 2.5,
         borderWidth: height * 0.0015,
-        paddingTop: height * 0.0055,
-        marginTop: height * 0.005,
+        paddingTop: height * 0.0076,
+        marginTop: height * 0.0055,
         backgroundColor: "#333436",
         color: "#fff",
         textAlign: "center",
@@ -725,6 +722,7 @@ const ListPage = () => {
       rBox: {
           position: "absolute",
           width: height * 0.205,
+          maxHeight: height * 0.5,
           padding: height * 0.01,
           backgroundColor: "#ededed",
           top: insets.top + height * 0.26,

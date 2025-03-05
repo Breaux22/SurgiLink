@@ -235,7 +235,7 @@ function SettingsPage () {
 
   async function getPrice() {
     const userInfo = JSON.parse(await SecureStore.getItemAsync('userInfo'));
-    setPrice(userInfo.monthlyPrice * userInfo.discount);
+    setPrice(Number(userInfo.monthlyPrice) * Number(userInfo.discount));
     return;
   }
 

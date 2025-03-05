@@ -80,8 +80,8 @@ function LoginPage () {
       },
       'body': JSON.stringify(data)
     }
-    const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/login'
-    //const url = 'https://SurgiLink.replit.app/login'
+    //const url = 'https://e6b80fb8-7d8e-4c21-a8d1-7a5368d27fcd-00-2ty982vc8hd6g.spock.replit.dev/login'
+    const url = 'https://SurgiLink.replit.app/login'
     const response = await fetch(url, headers)
       .then(response => {
         if (!response.ok) {
