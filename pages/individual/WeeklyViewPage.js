@@ -215,12 +215,13 @@ const WeeklyViewPage = () => {
         }
     }
 
-    async function filterCases (myId, myUsername) {
-        if (myUsername == 'Everyone') {
+    async function filterCases (myObj) {
+        const parsedObj = JSON.parse(myObj)
+        if (String(myUsername.username) == 'Everyone') {
             setCases(masterData);
         } else {
             let tempArr = [...masterData];
-            let newArr = tempArr.filter((item, index) => item.userId == myId);
+            let newArr = tempArr.filter((item, index) => String(item.rep) == String(parsedObj.id));
             setCases(newArr)   
         }
     }
@@ -611,7 +612,7 @@ const WeeklyViewPage = () => {
                 onValueChange={(itemValue) => {
                     setFilterValue(itemValue);
                     setUserListStyle(styles.collapsed);
-                    filterCases(JSON.parse(itemValue).id, JSON.parse(itemValue).username);
+                    filterCases(itemValue);
                 }}
                 style={userListStyle}
             >        

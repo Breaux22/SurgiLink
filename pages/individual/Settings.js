@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.01,
   },
   delete: {
-    marginLeft: width * 0.24,
+    marginLeft: height * 0.01,
     marginTop: height * 0.0225
   },
   deleteText: {

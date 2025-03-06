@@ -247,12 +247,13 @@ const MonthlyViewPage = () => {
         }
     }
 
-    async function filterMonthlyCaseData (myId, myUsername) {
-        if (myUsername == 'Everyone') {
+    async function filterMonthlyCaseData (myObj) {
+        const parsedObj = JSON.parse(myObj);
+        if (String(parsedObj.username) == 'Everyone') {
             setMonthlyCaseData(masterData);
         } else {
             let tempArr = [...masterData];
-            let newArr = tempArr.filter((item, index) => item.userId == myId);
+            let newArr = tempArr.filter((item, index) => String(item.rep) == String(parsedObj.id));
             setMonthlyCaseData(newArr)   
         }
     }
@@ -620,7 +621,7 @@ const MonthlyViewPage = () => {
                 onValueChange={(itemValue) => {
                     setFilterValue(itemValue);
                     setUserListStyle(styles.collapsed);
-                    filterMonthlyCaseData(JSON.parse(itemValue).id, JSON.parse(itemValue).username);
+                    filterMonthlyCaseData(itemValue);
                 }}
                 style={userListStyle}
             >        
@@ -649,8 +650,8 @@ const MonthlyViewPage = () => {
                     </Text>
                     <TouchableOpacity
                         onPress={() => {
-                            setCasesStyle(styles.collapsed)
                             setMenuUp(false);
+                            setCasesStyle(styles.collapsed);
                             generateCalendarCompTall();
                         }}
                         >
@@ -668,9 +669,9 @@ const MonthlyViewPage = () => {
             <View style={styles.showCasesDown}>
                 <TouchableOpacity
                     onPress={() => {
+                        setMenuUp(true);
                         setCasesStyle(styles.showCasesUp)
                         generateCalendarCompShort();
-                        setMenuUp(true);
                         fillMonthCasesComp();
                         setSelectedDate(null);
                     }}
